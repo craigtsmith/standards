@@ -1,0 +1,37 @@
+{
+  "name": "@craigts.dev/standards",
+  "version": "0.0.1",
+  "private": true,
+  "files": [
+    "oxlint",
+    "oxfmt",
+    "fallow",
+    "tsconfig"
+  ],
+  "type": "module",
+  "exports": {
+    "./oxlint": "./oxlint/config/index.ts",
+    "./oxlint/plugin": "./oxlint/plugin/index.ts",
+    "./oxfmt": "./oxfmt/index.ts",
+    "./fallow": "./fallow/index.json",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/node.json": "./tsconfig/node.json",
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/react.json": "./tsconfig/react.json"
+  },
+  "scripts": {
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "eslint-plugin-perfectionist": "^5.10.1",
+    "eslint-plugin-sonarjs": "^4.2.0"
+  },
+  "devDependencies": {
+    "@oxlint/plugins": "1.81.0",
+    "oxlint": "^1.81.0"
+  }
+}
