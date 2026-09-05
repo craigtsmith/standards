@@ -1,5 +1,1 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "allowImportingTsExtensions": true, "types": ["node"] },
-  "include": ["oxlint", "oxfmt"]
-}
+{ "extends": "../../tsconfig.base.json", "include": ["oxlint", "oxfmt", "*.ts"] }
