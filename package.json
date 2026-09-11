@@ -14,10 +14,7 @@
     "./oxlint/plugin": "./oxlint/plugin/index.ts",
     "./oxfmt": "./oxfmt/config/index.ts",
     "./fallow.jsonc": "./fallow.jsonc",
-    "./tsconfig/base.json": "./tsconfig/base.json",
-    "./tsconfig/node.json": "./tsconfig/node.json",
-    "./tsconfig/library.json": "./tsconfig/library.json",
-    "./tsconfig/react.json": "./tsconfig/react.json"
+    "./tsconfig/*.json": "./tsconfig/*.json"
   },
   "scripts": {
     "format": "oxfmt .",

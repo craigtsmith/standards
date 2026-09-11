@@ -101,7 +101,7 @@ function commentRuns(context: Context, spans: readonly CommentSpan[]): CommentSp
 function configuredMax(option: Options[number] | undefined): number {
   if (!(option instanceof Object) || Array.isArray(option)) return DEFAULT_MAX
 
-  const max = Number(option.max)
+  const max = Number(option["max"])
 
   return Number.isInteger(max) && max > 0 ? max : DEFAULT_MAX
 }

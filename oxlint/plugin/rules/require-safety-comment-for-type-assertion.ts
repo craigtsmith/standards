@@ -29,7 +29,7 @@ function isNonBlankString(value: Options[number]): value is string {
 function configuredSafetyMarkers(option: Options[number] | undefined): readonly string[] {
   if (!(option instanceof Object) || Array.isArray(option)) return DEFAULT_SAFETY_MARKERS
 
-  const configured = option.markers
+  const configured = option["markers"]
   if (!Array.isArray(configured)) return DEFAULT_SAFETY_MARKERS
 
   const markers = configured.filter(isNonBlankString).map((marker) => marker.trim())

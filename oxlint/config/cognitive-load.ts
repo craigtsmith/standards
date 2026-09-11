@@ -20,7 +20,7 @@ export const cognitiveLoadRules = defineConfig({
     "sonarjs/no-function-declaration-in-block": "off",
     "unicorn/no-lonely-if": "error",
     "unicorn/consistent-function-scoping": "error",
-    // tsc's noImplicitReturns covers this with real control flow (tsconfig.base.json).
+    // tsc's noImplicitReturns covers this with real control flow (the tsconfig preset).
     "typescript/consistent-return": "off",
 
     // Size budgets.

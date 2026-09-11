@@ -37,7 +37,7 @@ function isExistenceProbe(node: ESTree.UnaryExpression): boolean {
 }
 
 function allowsTypeGuards(option: Options[number] | undefined): boolean {
-  return option instanceof Object && !Array.isArray(option) && option.allowInTypeGuards === true
+  return option instanceof Object && !Array.isArray(option) && option["allowInTypeGuards"] === true
 }
 
 export const noRuntimeTypeofRule = defineRule({
