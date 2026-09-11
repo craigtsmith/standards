@@ -14,6 +14,7 @@ function isBorrowedMemberName(node: ESTree.Node): boolean {
   return parent.property === node && !parent.computed
 }
 
+// Not named after the file: "shape" is a term this rule forbids.
 export const noForbiddenTermInSymbolNamesRule = defineRule({
   meta: {
     type: "problem",

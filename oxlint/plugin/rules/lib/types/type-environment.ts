@@ -1,6 +1,6 @@
 import type { ESTree } from "@oxlint/plugins"
 
-import type { VisitorKeys } from "./walk.ts"
+import type { VisitorKeys } from "../ast/walk.ts"
 import { createTypeAliasEnvironment, type TypeAliasEnvironment } from "./type-alias-resolution.ts"
 
 export interface TypeEnvironment {

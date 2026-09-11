@@ -6,7 +6,7 @@ import {
   functionParameterBindingName,
   functionParameterTypeAnnotation,
   type FunctionParameter,
-} from "./lib/function-parameters.ts"
+} from "./lib/ast/function-parameters.ts"
 
 interface UnparsedParameter {
   readonly name: string

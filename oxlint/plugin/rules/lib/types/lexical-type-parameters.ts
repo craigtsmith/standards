@@ -1,6 +1,6 @@
 import type { ESTree } from "@oxlint/plugins"
 
-import { forEachChild, type VisitorKeys } from "./walk.ts"
+import { forEachChild, type VisitorKeys } from "../ast/walk.ts"
 
 /**
  * Collects every type parameter name in scope at a node, walking up through enclosing declarations,

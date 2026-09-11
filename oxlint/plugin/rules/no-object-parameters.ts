@@ -4,13 +4,13 @@ import { defineRule } from "@oxlint/plugins"
 import {
   functionParameterBindingName,
   functionParameterTypeAnnotation,
-} from "./lib/function-parameters.ts"
+} from "./lib/ast/function-parameters.ts"
 import {
   createTypeAliasEnvironment,
   resolvedTypeMatches,
   type ResolvedTypeMatcher,
   type TypeAliasEnvironment,
-} from "./lib/type-alias-resolution.ts"
+} from "./lib/types/type-alias-resolution.ts"
 
 type ParameterOwner =
   | ESTree.ArrowFunctionExpression

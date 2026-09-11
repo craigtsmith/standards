@@ -7,7 +7,7 @@ import {
   isDefinitelyObjectType,
   typesHaveSameSyntax,
   type BroadTypeKind,
-} from "./lib/broad-types.ts"
+} from "./lib/types/broad-types.ts"
 import {
   assertedExpression,
   assertionFromExpression,
@@ -16,7 +16,7 @@ import {
   resolvedVariableForIdentifier,
   stableConstDeclarator,
   type KnownValueEvidence,
-} from "./lib/widened-bindings.ts"
+} from "./lib/widening/widened-bindings.ts"
 
 interface WidenedBinding {
   readonly boundary: ESTree.Node | null

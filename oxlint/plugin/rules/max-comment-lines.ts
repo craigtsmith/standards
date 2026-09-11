@@ -1,7 +1,7 @@
 import type { Comment, Context, Options } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
-import { DOCUMENTED } from "./lib/documented-nodes.ts"
+import { DOCUMENTED } from "./lib/ast/documented-nodes.ts"
 
 const DEFAULT_MAX = 2
 

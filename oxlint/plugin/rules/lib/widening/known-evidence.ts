@@ -1,18 +1,18 @@
 import type { ESTree, SourceCode, Variable } from "@oxlint/plugins"
 
-import { classifyUnsafeDictionaryValue, type TypeEnvironment } from "./dictionary-types.ts"
-import { isKnownEvidenceExpression, unwrapExpression } from "./expressions.ts"
+import { isKnownEvidenceExpression, unwrapExpression } from "../ast/expressions.ts"
 import {
   functionParameterBindingName,
   functionParameterTypeAnnotation,
-} from "./function-parameters.ts"
-import { isFunctionExpression, localFunctionForCall } from "./local-functions.ts"
+} from "../ast/function-parameters.ts"
+import { isFunctionExpression, localFunctionForCall } from "../ast/local-functions.ts"
 import {
   isStableConstVariable,
   resolveVariable,
   singleDefinition,
   variableDeclarator,
-} from "./variables.ts"
+} from "../ast/variables.ts"
+import { classifyUnsafeDictionaryValue, type TypeEnvironment } from "../types/dictionary-types.ts"
 
 export interface EvidenceLookup {
   readonly environment: TypeEnvironment

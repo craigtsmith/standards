@@ -5,7 +5,7 @@ import {
   createTypeAliasEnvironment,
   resolvedTypeMatches,
   type TypeAliasEnvironment,
-} from "./lib/type-alias-resolution.ts"
+} from "./lib/types/type-alias-resolution.ts"
 
 export const noUnknownTypeAliasesRule = defineRule({
   meta: {

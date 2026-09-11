@@ -1,14 +1,14 @@
 import type { Context, ESTree } from "@oxlint/plugins"
 
+import { isEmptyObjectExpression } from "../ast/expressions.ts"
+import { functionName, sourceKeyName, type FunctionExpression } from "../ast/local-functions.ts"
+import { resolveVariable, variableDeclarator } from "../ast/variables.ts"
 import {
   classifyWideningTarget,
   type TypeEnvironment,
   type WideningTarget,
-} from "./dictionary-types.ts"
-import { isEmptyObjectExpression } from "./expressions.ts"
+} from "../types/dictionary-types.ts"
 import { hasKnownEvidence } from "./known-evidence.ts"
-import { functionName, sourceKeyName, type FunctionExpression } from "./local-functions.ts"
-import { resolveVariable, variableDeclarator } from "./variables.ts"
 
 export interface FileState {
   environment: TypeEnvironment | null

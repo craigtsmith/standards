@@ -1,8 +1,8 @@
 import type { ESTree, Scope, Variable } from "@oxlint/plugins"
 
-import { broadTypeKind } from "./broad-types.ts"
-import { unwrapExpressionParentheses } from "./expressions.ts"
-import { variableDeclarator } from "./variables.ts"
+import { unwrapExpressionParentheses } from "../ast/expressions.ts"
+import { variableDeclarator } from "../ast/variables.ts"
+import { broadTypeKind } from "../types/broad-types.ts"
 
 export interface KnownValueEvidence {
   readonly type: ESTree.TSType | null

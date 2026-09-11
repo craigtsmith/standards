@@ -6,7 +6,7 @@ import {
   resolvedTypeMatches,
   type ResolvedTypeMatcher,
   type TypeAliasEnvironment,
-} from "./lib/type-alias-resolution.ts"
+} from "./lib/types/type-alias-resolution.ts"
 
 type FunctionWithReturnType =
   | ESTree.ArrowFunctionExpression

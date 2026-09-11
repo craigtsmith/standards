@@ -1,9 +1,9 @@
 import type { ESTree } from "@oxlint/plugins"
 
 import type { Flow } from "./widening-flows.ts"
-import { functionParameterBindingName } from "./function-parameters.ts"
+import { functionParameterBindingName } from "../ast/function-parameters.ts"
+import { functionName, hasUnknownAnnotation, predicateCall } from "../ast/local-functions.ts"
 import { hasKnownCallArgumentEvidence } from "./known-evidence.ts"
-import { functionName, hasUnknownAnnotation, predicateCall } from "./local-functions.ts"
 
 /**
  * Reports a call that passes an argument with known type evidence into a local type-predicate

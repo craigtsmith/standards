@@ -1,7 +1,7 @@
 import type { ESTree, SourceCode } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
-import { resolveVariable } from "./lib/variables.ts"
+import { resolveVariable } from "./lib/ast/variables.ts"
 
 const moduleMockMethods = new Set(["doMock", "mock", "unstable_mockModule"])
 

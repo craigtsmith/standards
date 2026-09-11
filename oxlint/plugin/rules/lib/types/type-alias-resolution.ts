@@ -1,6 +1,6 @@
 import type { ESTree } from "@oxlint/plugins"
 
-import type { VisitorKeys } from "./walk.ts"
+import type { VisitorKeys } from "../ast/walk.ts"
 import { lexicalTypeParameterNames } from "./lexical-type-parameters.ts"
 import { collectTypeBindings, nearestTypeBindings, type TypeBindings } from "./type-bindings.ts"
 import { aliasArguments, typeReferenceName } from "./type-syntax.ts"

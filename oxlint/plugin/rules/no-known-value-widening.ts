@@ -1,8 +1,8 @@
 import { defineRule } from "@oxlint/plugins"
 
-import { callFlow } from "./lib/call-flow.ts"
-import { createTypeEnvironment } from "./lib/dictionary-types.ts"
-import { enclosingFunction } from "./lib/local-functions.ts"
+import { enclosingFunction } from "./lib/ast/local-functions.ts"
+import { createTypeEnvironment } from "./lib/types/dictionary-types.ts"
+import { callFlow } from "./lib/widening/call-flow.ts"
 import {
   assertionFlow,
   assignmentFlow,
@@ -11,7 +11,7 @@ import {
   returnFlow,
   type FileState,
   type Flow,
-} from "./lib/widening-flows.ts"
+} from "./lib/widening/widening-flows.ts"
 
 export const noKnownValueWideningRule = defineRule({
   meta: {
