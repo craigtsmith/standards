@@ -1,13 +1,18 @@
 import { fileURLToPath } from "node:url"
 import { defineConfig as defineOxlintConfig, type OxlintConfig } from "oxlint"
 
-import { cognitiveLoadRules } from "./cognitive-load.ts"
-import { failurePathsRules } from "./failure-paths.ts"
-import { houseStyleRules } from "./house-style.ts"
-import { moduleSurfaceRules } from "./module-surface.ts"
-import { securityRules } from "./security.ts"
-import { testingRules } from "./testing.ts"
-import { typeSystemRules } from "./type-system.ts"
+import { eslintRules } from "./rules/eslint.ts"
+import { importRules } from "./rules/import.ts"
+import { jsdocRules } from "./rules/jsdoc.ts"
+import { oxcRules } from "./rules/oxc.ts"
+import { perfectionistRules } from "./rules/perfectionist.ts"
+import { promiseRules } from "./rules/promise.ts"
+import { reactRules } from "./rules/react.ts"
+import { sonarjsRules } from "./rules/sonarjs.ts"
+import { standardsRules } from "./rules/standards.ts"
+import { typescriptRules } from "./rules/typescript.ts"
+import { unicornRules } from "./rules/unicorn.ts"
+import { vitestRules } from "./rules/vitest.ts"
 
 const resolve = (spec: string) => fileURLToPath(import.meta.resolve(spec))
 
@@ -17,14 +22,20 @@ const base = defineOxlintConfig({
   ignorePatterns: ["**/dist", "**/out", "**/.astro", "**/node_modules", "**/.claude"],
   categories: { correctness: "error", perf: "warn", suspicious: "warn" },
   options: { typeAware: true },
+  // One file per plugin, in the order the rule prefixes sort.
   extends: [
-    typeSystemRules,
-    failurePathsRules,
-    cognitiveLoadRules,
-    moduleSurfaceRules,
-    houseStyleRules,
-    securityRules,
-    testingRules,
+    eslintRules,
+    importRules,
+    jsdocRules,
+    oxcRules,
+    perfectionistRules,
+    promiseRules,
+    reactRules,
+    sonarjsRules,
+    standardsRules,
+    typescriptRules,
+    unicornRules,
+    vitestRules,
   ],
   jsPlugins: [
     "@craigts.dev/standards/oxlint/plugin",
@@ -32,29 +43,8 @@ const base = defineOxlintConfig({
     resolve("eslint-plugin-sonarjs"),
   ],
   overrides: [
-    { files: ["**/*.d.ts"], rules: { "sonarjs/no-redundant-assignments": "off" } },
     { env: { node: true }, files: ["**/*.config.{ts,mts,js,mjs}", "**/scripts/**"] },
-    {
-      env: { node: true },
-      files: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/e2e/**"],
-      rules: {
-        "eslint/max-depth": "off",
-        "eslint/max-lines": "off",
-        "eslint/max-lines-per-function": "off",
-        "eslint/max-nested-callbacks": "off",
-        "eslint/max-params": "off",
-        "eslint/max-statements": "off",
-        "typescript/class-methods-use-this": "off",
-        "typescript/no-explicit-any": "off",
-        "typescript/no-extraneous-class": "off",
-        "typescript/no-non-null-assertion": "off",
-        "typescript/no-unsafe-assignment": "off",
-        "typescript/no-unsafe-return": "off",
-        "typescript/no-unsafe-type-assertion": "off",
-        "typescript/require-await": "off",
-        "typescript/unbound-method": "off",
-      },
-    },
+    { env: { node: true }, files: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/e2e/**"] },
   ],
   plugins: [
     "import",
