@@ -125,7 +125,7 @@ Node runs the `.ts` files itself (type stripping is on by default since Node 23.
 
 ## Requirements
 
-TypeScript 6.0 or later. The presets lean on 6.0 defaults (`strict`, `types: []`, `noUncheckedSideEffectImports`, interop always on) and use nothing 7.0 removed (`baseUrl`, `downlevelIteration`, `moduleResolution: node10`). `es2025` as a `target` and `lib` value arrived in 6.0, so an editor whose language server bundles TypeScript 5.9 will reject these files; point it at a 6.x SDK.
+TypeScript 6.0 or later. The presets lean on 6.0 defaults (`strict`, `types: []`, `noUncheckedSideEffectImports`, interop always on) and use nothing 7.0 removed (`baseUrl`, `downlevelIteration`, `moduleResolution: node10`). `es2025` as a `target` and `lib` value arrived in 6.0. An editor language server that still runs a bundled TypeScript 5.9 (vtsls does, because TypeScript 7 ships no `tsserver.js` for it to load) rejects these files; use a server that runs TypeScript 7 itself, such as Zed's tsgo extension.
 
 ## What stays with the consumer
 
