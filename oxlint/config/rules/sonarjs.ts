@@ -21,13 +21,10 @@ const cognitiveLoad = {
   "sonarjs/misplaced-loop-counter": "error",
   "sonarjs/no-all-duplicated-branches": "error",
   "sonarjs/no-duplicated-branches": "error",
-  // Off: unicorn/consistent-function-scoping covers it, and allows a block
-  // function that uses its closure.
-  "sonarjs/no-function-declaration-in-block": "off",
   "sonarjs/no-nested-assignment": "error",
+  // Rejects the nesting outright, so unicorn/no-nested-ternary is not needed.
   "sonarjs/no-nested-conditional": "error",
   "sonarjs/no-nested-functions": "error",
-  "sonarjs/no-nested-incdec": "off",
   // Dead work the reader still has to parse. eslint/no-useless-assignment stays
   // too: neither subsumes the other, on one function they reported different lines.
   "sonarjs/no-redundant-assignments": "error",
@@ -43,7 +40,6 @@ const moduleSurface = {
 
 // Choices that are arbitrary alone and only pay off by being fixed.
 const houseStyle = {
-  "sonarjs/conditional-indentation": "off",
   "sonarjs/no-same-line-conditional": "error",
 } satisfies Rules
 

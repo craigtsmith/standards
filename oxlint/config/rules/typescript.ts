@@ -63,10 +63,11 @@ const moduleSurface = {
   "typescript/no-require-imports": "error",
   "typescript/prefer-return-this-type": "error",
   "typescript/related-getter-setter-pairs": "error",
+  // On by default, so this line is load-bearing.
   "typescript/unbound-method": "off",
   "typescript/unified-signatures": "error",
-  // `eslint/class-methods-use-this` is this rule's base name; through
-  // `extends` its "off" would win, so it is gone.
+  // Do not also set eslint/class-methods-use-this: the base rule's "off"
+  // would win over this one through `extends`.
   "typescript/class-methods-use-this": [
     "error",
     {
@@ -75,14 +76,6 @@ const moduleSurface = {
       ignoreOverrideMethods: true,
     },
   ],
-} satisfies Rules
-
-// Off, and off by default. Carried from agent-eslint-config.
-const offByDefault = {
-  "typescript/consistent-type-imports": "off",
-  "typescript/no-confusing-void-expression": "off",
-  "typescript/require-await": "off",
-  "typescript/use-unknown-in-catch-callback-variable": "off",
 } satisfies Rules
 
 export const typescriptRules = defineConfig({
@@ -97,8 +90,6 @@ export const typescriptRules = defineConfig({
         "typescript/no-unsafe-assignment": "off",
         "typescript/no-unsafe-return": "off",
         "typescript/no-unsafe-type-assertion": "off",
-        "typescript/require-await": "off",
-        "typescript/unbound-method": "off",
       },
     },
   ],
@@ -108,6 +99,5 @@ export const typescriptRules = defineConfig({
     ...failurePaths,
     ...cognitiveLoad,
     ...moduleSurface,
-    ...offByDefault,
   },
 })

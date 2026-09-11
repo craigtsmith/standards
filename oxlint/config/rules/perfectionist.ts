@@ -16,7 +16,6 @@ const houseStyle = {
   "perfectionist/sort-jsx-props": sortJsxProps,
   "perfectionist/sort-maps": ["error", { type: "natural" }],
   "perfectionist/sort-modules": sortModules,
-  "perfectionist/sort-named-imports": "off",
   "perfectionist/sort-object-types": ["error", { type: "natural" }],
   "perfectionist/sort-sets": ["error", { type: "natural" }],
   "perfectionist/sort-objects": [

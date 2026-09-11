@@ -8,6 +8,7 @@ const moduleSurface = {
   // works while editing, so both stay.
   "import/no-cycle": "error",
   "import/no-named-as-default": "error",
+  // On by default, so this line is load-bearing.
   "import/no-unassigned-import": "off",
 } satisfies Rules
 

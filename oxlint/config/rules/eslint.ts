@@ -4,6 +4,7 @@ import { testFiles, type Rules } from "./shared.ts"
 
 // The unhappy path: promises, await, throw and catch.
 const failurePaths = {
+  // On by default, so this line is load-bearing.
   "eslint/no-await-in-loop": "off",
   "eslint/preserve-caught-error": "error",
 } satisfies Rules
@@ -27,7 +28,7 @@ const cognitiveLoad = {
 // What may be reassigned.
 const moduleSurface = {
   "eslint/no-param-reassign": "error",
-  // Upstream resets antfu's options by mistake; these are antfu's.
+  // `all`: a destructuring that reassigns any binding keeps `let`.
   "eslint/prefer-const": ["error", { destructuring: "all", ignoreReadBeforeAssign: true }],
 } satisfies Rules
 
@@ -42,13 +43,8 @@ const houseStyle = {
   ],
 } satisfies Rules
 
-// Off, and off by default. Carried from agent-eslint-config.
-const offByDefault = {
-  "eslint/init-declarations": "off",
-} satisfies Rules
-
 export const eslintRules = defineConfig({
-  rules: { ...failurePaths, ...cognitiveLoad, ...moduleSurface, ...houseStyle, ...offByDefault },
+  rules: { ...failurePaths, ...cognitiveLoad, ...moduleSurface, ...houseStyle },
   overrides: [
     {
       files: testFiles,

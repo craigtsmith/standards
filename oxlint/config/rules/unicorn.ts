@@ -20,12 +20,9 @@ const failurePaths = {
 // Everything a reader must hold in their head to follow a function.
 const cognitiveLoad = {
   // Allows a block function that uses its closure, which is why
-  // sonarjs/no-function-declaration-in-block is off.
+  // sonarjs/no-function-declaration-in-block is not enabled.
   "unicorn/consistent-function-scoping": "error",
   "unicorn/no-lonely-if": "error",
-  // Off, and off by default. sonarjs/no-nested-conditional rejects the
-  // nesting outright.
-  "unicorn/no-nested-ternary": "off",
 } satisfies Rules
 
 // The surface a module presents: what it exports, imports and mutates.
@@ -40,11 +37,6 @@ const houseStyle = {
   "unicorn/filename-case": ["warn", { case: "kebabCase" }],
 } satisfies Rules
 
-// Off, and off by default. Carried from agent-eslint-config.
-const offByDefault = {
-  "unicorn/throw-new-error": "off",
-} satisfies Rules
-
 export const unicornRules = defineConfig({
   rules: {
     ...typeSystem,
@@ -52,6 +44,5 @@ export const unicornRules = defineConfig({
     ...cognitiveLoad,
     ...moduleSurface,
     ...houseStyle,
-    ...offByDefault,
   },
 })

@@ -4,12 +4,8 @@ import type { Rules } from "./shared.ts"
 
 // Tests that do not run, or do not mean what they say.
 const testing = {
+  // On by default, so this line is load-bearing.
   "vitest/require-mock-type-parameters": "off",
 } satisfies Rules
 
-// Off, and off by default. Carried from agent-eslint-config.
-const offByDefault = {
-  "vitest/prefer-lowercase-title": "off",
-} satisfies Rules
-
-export const vitestRules = defineConfig({ rules: { ...testing, ...offByDefault } })
+export const vitestRules = defineConfig({ rules: { ...testing } })
