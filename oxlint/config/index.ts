@@ -17,6 +17,8 @@ import { vitestRules } from "./rules/vitest.ts"
 const resolve = (spec: string) => fileURLToPath(import.meta.resolve(spec))
 
 const base = defineOxlintConfig({
+  // Each category switches on every built-in rule tagged with it, so the
+  // rule files are not the whole list. `oxlint --print-config` is.
   categories: { correctness: "error", perf: "warn", suspicious: "warn" },
   env: { browser: true, es2024: true },
   ignorePatterns: ["**/dist", "**/out", "**/.astro", "**/node_modules", "**/.claude"],
@@ -60,6 +62,8 @@ const base = defineOxlintConfig({
   ],
 })
 
+// oxlint's `extends` merges rules, overrides and plugins, but replaces env,
+// ignorePatterns and settings with the consumer's. The spreads keep the base's.
 export const defineConfig = (config: OxlintConfig = {}): OxlintConfig =>
   defineOxlintConfig({
     ...config,

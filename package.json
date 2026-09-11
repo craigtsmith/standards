@@ -5,14 +5,14 @@
   "files": [
     "oxlint",
     "oxfmt",
-    "fallow",
+    "fallow.jsonc",
     "tsconfig"
   ],
   "type": "module",
   "exports": {
     "./oxlint": "./oxlint/config/index.ts",
     "./oxlint/plugin": "./oxlint/plugin/index.ts",
-    "./oxfmt": "./oxfmt/config/index.ts",
+    "./oxfmt": "./oxfmt/index.ts",
     "./fallow.jsonc": "./fallow.jsonc",
     "./tsconfig/*.json": "./tsconfig/*.json"
   },
