@@ -27,6 +27,10 @@ An `"off"` entry is load-bearing only when a category would otherwise enable the
 
 oxlint's `extends` merges `rules`, `overrides` and `plugins` from every extended config. It replaces `env`, `ignorePatterns` and `settings` with the consumer's. `defineConfig` spreads those three so the base values survive; anything else the consumer passes goes through untouched.
 
+## Tests
+
+`pnpm --filter @craigts.dev/standards test` runs vitest over `plugin/rules/*.test.ts`. Each rule has one test file beside it, driven by `RuleTester` from `oxlint/plugins-dev`, which lints in-process through oxlint's own bindings. `plugin/rules/rule-tester.ts` binds the tester to vitest and exports two instances: `ruleTester` parses as `ts`, `tsxRuleTester` as `tsx` for cases that hold JSX. Columns in an expected error are zero-based. An `errors` entry with `data` must name every placeholder the message uses.
+
 ## Probes
 
 `config/rules/perfectionist/*.probe.ts` are linted like any other file. Reorder members in one and `pnpm lint` should report it. They import nothing and nothing imports them, so fallow lists them as unused files. That is expected.
