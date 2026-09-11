@@ -28,12 +28,12 @@ const cognitiveLoad = {
   "sonarjs/no-nested-conditional": "error",
   "sonarjs/no-nested-functions": "error",
   "sonarjs/no-nested-incdec": "off",
-  "sonarjs/too-many-break-or-continue-in-loop": "error",
-  "sonarjs/updated-loop-counter": "error",
   // Dead work the reader still has to parse. eslint/no-useless-assignment stays
   // too: neither subsumes the other, on one function they reported different lines.
   "sonarjs/no-redundant-assignments": "error",
   "sonarjs/no-useless-increment": "error",
+  "sonarjs/too-many-break-or-continue-in-loop": "error",
+  "sonarjs/updated-loop-counter": "error",
 } satisfies Rules
 
 // What may be reassigned, deleted or spread.

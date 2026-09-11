@@ -51,12 +51,20 @@ const cognitiveLoad = {
   // tsc's noImplicitReturns covers this with real control flow (the tsconfig preset).
   "typescript/consistent-return": "off",
   "typescript/no-unused-expressions": "error",
-  "typescript/no-unused-vars": ["error", { varsIgnorePattern: "^_", argsIgnorePattern: "^_" }],
+  "typescript/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
   "typescript/no-useless-constructor": "error",
 } satisfies Rules
 
 // The surface a module presents: what it exports, imports and mutates.
 const moduleSurface = {
+  "typescript/no-array-constructor": "error",
+  "typescript/no-dynamic-delete": "error",
+  "typescript/no-extraneous-class": "error",
+  "typescript/no-require-imports": "error",
+  "typescript/prefer-return-this-type": "error",
+  "typescript/related-getter-setter-pairs": "error",
+  "typescript/unbound-method": "off",
+  "typescript/unified-signatures": "error",
   // `eslint/class-methods-use-this` is this rule's base name; through
   // `extends` its "off" would win, so it is gone.
   "typescript/class-methods-use-this": [
@@ -67,14 +75,6 @@ const moduleSurface = {
       ignoreOverrideMethods: true,
     },
   ],
-  "typescript/no-array-constructor": "error",
-  "typescript/no-dynamic-delete": "error",
-  "typescript/no-extraneous-class": "error",
-  "typescript/no-require-imports": "error",
-  "typescript/prefer-return-this-type": "error",
-  "typescript/related-getter-setter-pairs": "error",
-  "typescript/unbound-method": "off",
-  "typescript/unified-signatures": "error",
 } satisfies Rules
 
 // Off, and off by default. Carried from agent-eslint-config.

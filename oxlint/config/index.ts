@@ -17,11 +17,11 @@ import { vitestRules } from "./rules/vitest.ts"
 const resolve = (spec: string) => fileURLToPath(import.meta.resolve(spec))
 
 const base = defineOxlintConfig({
-  env: { browser: true, es2024: true },
-  settings: { react: { version: "19.2" } },
-  ignorePatterns: ["**/dist", "**/out", "**/.astro", "**/node_modules", "**/.claude"],
   categories: { correctness: "error", perf: "warn", suspicious: "warn" },
+  env: { browser: true, es2024: true },
+  ignorePatterns: ["**/dist", "**/out", "**/.astro", "**/node_modules", "**/.claude"],
   options: { typeAware: true },
+  settings: { react: { version: "19.2" } },
   // One file per plugin, in the order the rule prefixes sort.
   extends: [
     eslintRules,

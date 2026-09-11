@@ -38,7 +38,7 @@ const houseStyle = {
   "eslint/no-underscore-dangle": "off",
   "eslint/no-warning-comments": [
     "error",
-    { terms: ["jscpd:ignore-start", "jscpd:ignore-end"], location: "anywhere" },
+    { location: "anywhere", terms: ["jscpd:ignore-start", "jscpd:ignore-end"] },
   ],
 } satisfies Rules
 
@@ -48,6 +48,7 @@ const offByDefault = {
 } satisfies Rules
 
 export const eslintRules = defineConfig({
+  rules: { ...failurePaths, ...cognitiveLoad, ...moduleSurface, ...houseStyle, ...offByDefault },
   overrides: [
     {
       files: testFiles,
@@ -61,5 +62,4 @@ export const eslintRules = defineConfig({
       },
     },
   ],
-  rules: { ...failurePaths, ...cognitiveLoad, ...moduleSurface, ...houseStyle, ...offByDefault },
 })
