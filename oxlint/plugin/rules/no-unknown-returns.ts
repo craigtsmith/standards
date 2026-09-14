@@ -1,4 +1,4 @@
-import type { ESTree } from "@oxlint/plugins"
+import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import {
@@ -43,7 +43,7 @@ function resolvesToUnknown(type: ESTree.TSType, environment: TypeAliasEnvironmen
   return environment !== null && resolvedTypeMatches(type, environment, isUnknownKeyword)
 }
 
-export const noUnknownReturnsRule = defineRule({
+export const noUnknownReturnsRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

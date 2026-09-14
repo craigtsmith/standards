@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -8,4 +8,4 @@ const failurePaths = {
   "oxc/missing-throw": "off",
 } satisfies Rules
 
-export const oxcRules = defineConfig({ rules: { ...failurePaths } })
+export const oxcRules: OxlintConfig = defineConfig({ rules: { ...failurePaths } })

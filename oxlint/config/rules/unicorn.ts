@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -37,7 +37,7 @@ const houseStyle = {
   "unicorn/filename-case": ["warn", { case: "kebabCase" }],
 } satisfies Rules
 
-export const unicornRules = defineConfig({
+export const unicornRules: OxlintConfig = defineConfig({
   rules: {
     ...typeSystem,
     ...failurePaths,

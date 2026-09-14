@@ -1,4 +1,4 @@
-import type { ESTree } from "@oxlint/plugins"
+import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 type TypeAssertionExpression = ESTree.TSAsExpression | ESTree.TSTypeAssertion
@@ -53,7 +53,7 @@ function isForbiddenAssertionChain(node: TypeAssertionExpression): boolean {
   return assertionCount > 1 && hasNonConstAssertion
 }
 
-export const noChainedTypeAssertionsRule = defineRule({
+export const noChainedTypeAssertionsRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

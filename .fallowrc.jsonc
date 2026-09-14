@@ -1,8 +1,17 @@
 {
   "$schema": "./node_modules/fallow/schema.json",
   "extends": ["./fallow.jsonc"],
+  "ignorePatterns": ["dist/**"],
+  // package.json exports point at dist, so the source entries are named here.
   // The probes are lint fixtures: oxlint reads them, nothing imports them.
-  "entry": ["oxfmt.config.ts", "oxlint.config.ts", "oxlint/config/rules/perfectionist/*.probe.ts"],
+  "entry": [
+    "oxfmt.config.ts",
+    "oxfmt/index.ts",
+    "oxlint.config.ts",
+    "oxlint/config/index.ts",
+    "oxlint/config/rules/perfectionist/*.probe.ts",
+    "oxlint/plugin/index.ts"
+  ],
   "boundaries": {
     "coverage": { "allowUnmatched": ["*.config.ts"] },
     // Declared narrow to wide: an earlier zone wins where patterns overlap.

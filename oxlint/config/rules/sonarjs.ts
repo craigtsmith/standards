@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -56,7 +56,7 @@ const testing = {
   "sonarjs/stable-tests": "error",
 } satisfies Rules
 
-export const sonarjsRules = defineConfig({
+export const sonarjsRules: OxlintConfig = defineConfig({
   overrides: [{ files: ["**/*.d.ts"], rules: { "sonarjs/no-redundant-assignments": "off" } }],
   rules: {
     ...typeSystem,

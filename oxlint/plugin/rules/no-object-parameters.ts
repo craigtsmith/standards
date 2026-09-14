@@ -1,4 +1,4 @@
-import type { Context, ESTree } from "@oxlint/plugins"
+import type { Context, ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import {
@@ -56,7 +56,7 @@ function reportObjectParameters(context: Context, state: FileState, node: Parame
   }
 }
 
-export const noObjectParametersRule = defineRule({
+export const noObjectParametersRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

@@ -7,7 +7,7 @@ oxlint, oxfmt, fallow and tsconfig presets for craigts.dev projects. Not publish
 "devDependencies": { "@craigts.dev/standards": "github:craigtsmith/standards#main" }
 ```
 
-The package exports TypeScript source and JSON, so there is no build step. `oxlint`, `@oxlint/plugins` and `oxfmt` are peer dependencies: the plugin rules run inside the consumer's oxlint.
+`exports` points at `dist/`, which `pnpm build` (tsc, `tsconfig.build.json`) emits and `prepare` runs on install. Node will not type-strip `.ts` under `node_modules`, and oxlint and oxfmt load their config through Node, so the package has to ship JavaScript. `oxlint`, `@oxlint/plugins` and `oxfmt` are peer dependencies: the plugin rules run inside the consumer's oxlint.
 
 | Export                                   | Use                                                           |
 | ---------------------------------------- | ------------------------------------------------------------- |

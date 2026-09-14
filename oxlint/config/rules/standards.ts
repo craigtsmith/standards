@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -35,6 +35,6 @@ const testing = {
   "standards/no-module-mocking": "error",
 } satisfies Rules
 
-export const standardsRules = defineConfig({
+export const standardsRules: OxlintConfig = defineConfig({
   rules: { ...typeSystem, ...moduleSurface, ...houseStyle, ...testing },
 })

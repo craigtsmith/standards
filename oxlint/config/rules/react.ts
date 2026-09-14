@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -7,4 +7,4 @@ const moduleSurface = {
   "react/react-in-jsx-scope": "off",
 } satisfies Rules
 
-export const reactRules = defineConfig({ rules: { ...moduleSurface } })
+export const reactRules: OxlintConfig = defineConfig({ rules: { ...moduleSurface } })

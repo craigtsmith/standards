@@ -1,4 +1,4 @@
-import type { ESTree } from "@oxlint/plugins"
+import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 const FORBIDDEN_SYMBOL_NAME = "shape"
@@ -15,7 +15,7 @@ function isBorrowedMemberName(node: ESTree.Node): boolean {
 }
 
 // Not named after the file: "shape" is a term this rule forbids.
-export const noForbiddenTermInSymbolNamesRule = defineRule({
+export const noForbiddenTermInSymbolNamesRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

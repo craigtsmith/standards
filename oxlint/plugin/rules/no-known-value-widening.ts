@@ -1,4 +1,4 @@
-import { defineRule } from "@oxlint/plugins"
+import { defineRule, type Rule } from "@oxlint/plugins"
 
 import { enclosingFunction } from "./lib/ast/local-functions.ts"
 import { createTypeEnvironment } from "./lib/types/dictionary-types.ts"
@@ -13,7 +13,7 @@ import {
   type Flow,
 } from "./lib/widening/widening-flows.ts"
 
-export const noKnownValueWideningRule = defineRule({
+export const noKnownValueWideningRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import { testFiles, type Rules } from "./shared.ts"
 
@@ -78,7 +78,7 @@ const moduleSurface = {
   ],
 } satisfies Rules
 
-export const typescriptRules = defineConfig({
+export const typescriptRules: OxlintConfig = defineConfig({
   overrides: [
     {
       files: testFiles,

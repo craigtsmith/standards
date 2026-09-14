@@ -1,0 +1,11 @@
+{
+  "extends": [
+    "./tsconfig/base.json",
+    "./tsconfig/node.json",
+    "./tsconfig/tsc.json",
+    "./tsconfig/library.json"
+  ],
+  "compilerOptions": { "rootDir": ".", "outDir": "dist" },
+  "include": ["oxlint", "oxfmt"],
+  "exclude": ["**/*.test.ts", "**/*.probe.ts", "oxlint/plugin/rules/rule-tester.ts"]
+}

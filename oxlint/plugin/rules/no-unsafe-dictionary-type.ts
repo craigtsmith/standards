@@ -1,4 +1,4 @@
-import type { ESTree } from "@oxlint/plugins"
+import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import {
@@ -113,7 +113,7 @@ function shouldReportType(node: ESTree.TSType, environment: TypeEnvironment): bo
   return true
 }
 
-export const noUnsafeDictionaryTypeRule = defineRule({
+export const noUnsafeDictionaryTypeRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

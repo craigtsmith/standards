@@ -1,4 +1,4 @@
-import type { ESTree, Scope, Variable } from "@oxlint/plugins"
+import type { ESTree, Rule, Scope, Variable } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import {
@@ -84,7 +84,7 @@ function assertionIsNarrower(
   return isDefinitelyNarrowerRecordType(assertedType)
 }
 
-export const noWidenThenAssertRule = defineRule({
+export const noWidenThenAssertRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

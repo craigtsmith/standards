@@ -1,7 +1,7 @@
 import type { Rule } from "../shared.ts"
 
 // Probed by ./sort-modules.probe.ts.
-export const sortModules = [
+export const sortModules: Rule = [
   "error",
   {
     newlinesBetween: 1,
@@ -28,4 +28,4 @@ export const sortModules = [
       { group: "unknown", newlinesInside: 1 },
     ],
   },
-] satisfies Rule
+]

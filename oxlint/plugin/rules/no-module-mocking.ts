@@ -1,4 +1,4 @@
-import type { ESTree, SourceCode } from "@oxlint/plugins"
+import type { ESTree, Rule, SourceCode } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import { resolveVariable } from "./lib/ast/variables.ts"
@@ -58,7 +58,7 @@ function moduleMockCall(sourceCode: SourceCode, callee: ESTree.Expression): bool
   return method !== null && moduleMockMethods.has(method)
 }
 
-export const noModuleMockingRule = defineRule({
+export const noModuleMockingRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

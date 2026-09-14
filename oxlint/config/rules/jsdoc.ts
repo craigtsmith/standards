@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -18,4 +18,4 @@ const houseStyle = {
   "jsdoc/require-yields-description": "error",
 } satisfies Rules
 
-export const jsdocRules = defineConfig({ rules: { ...houseStyle } })
+export const jsdocRules: OxlintConfig = defineConfig({ rules: { ...houseStyle } })

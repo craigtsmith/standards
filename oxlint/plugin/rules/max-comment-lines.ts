@@ -1,4 +1,4 @@
-import type { Comment, Context, Options } from "@oxlint/plugins"
+import type { Comment, Context, Options, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import { DOCUMENTED } from "./lib/ast/documented-nodes.ts"
@@ -106,7 +106,7 @@ function configuredMax(option: Options[number] | undefined): number {
   return Number.isInteger(max) && max > 0 ? max : DEFAULT_MAX
 }
 
-export const maxCommentLinesRule = defineRule({
+export const maxCommentLinesRule: Rule = defineRule({
   meta: {
     defaultOptions: [{ max: DEFAULT_MAX }],
     type: "suggestion",

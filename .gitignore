@@ -5,3 +5,4 @@ coverage/
 *.tsbuildinfo
 .fallow/
 .claude/worktrees
+dist/

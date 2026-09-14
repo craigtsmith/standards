@@ -1,6 +1,6 @@
 import type { Rule } from "../shared.ts"
 
-export const sortJsxProps = [
+export const sortJsxProps: Rule = [
   "error",
   {
     newlinesBetween: 0,
@@ -54,4 +54,4 @@ export const sortJsxProps = [
       "multiline-jsx-value",
     ],
   },
-] satisfies Rule
+]

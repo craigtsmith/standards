@@ -1,8 +1,8 @@
-import { defineRule } from "@oxlint/plugins"
+import { defineRule, type Rule } from "@oxlint/plugins"
 
 import { isGlobalReflectMethodCall } from "./lib/ast/reflect-method.ts"
 
-export const noReflectGetRule = defineRule({
+export const noReflectGetRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

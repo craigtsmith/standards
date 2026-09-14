@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import { testFiles, type Rules } from "./shared.ts"
 
@@ -43,7 +43,7 @@ const houseStyle = {
   ],
 } satisfies Rules
 
-export const eslintRules = defineConfig({
+export const eslintRules: OxlintConfig = defineConfig({
   rules: { ...failurePaths, ...cognitiveLoad, ...moduleSurface, ...houseStyle },
   overrides: [
     {

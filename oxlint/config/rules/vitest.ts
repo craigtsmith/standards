@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -8,4 +8,4 @@ const testing = {
   "vitest/require-mock-type-parameters": "off",
 } satisfies Rules
 
-export const vitestRules = defineConfig({ rules: { ...testing } })
+export const vitestRules: OxlintConfig = defineConfig({ rules: { ...testing } })

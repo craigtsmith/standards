@@ -1,6 +1,6 @@
 import type { Rule } from "../shared.ts"
 
-export const sortImports = [
+export const sortImports: Rule = [
   "error",
   {
     customGroups: [{ elementNamePattern: ["^react$", "^react-.+"], groupName: "react" }],
@@ -23,4 +23,4 @@ export const sortImports = [
       { newlinesBetween: 1 },
     ],
   },
-] satisfies Rule
+]

@@ -1,4 +1,4 @@
-import type { ESTree, Options } from "@oxlint/plugins"
+import type { ESTree, Options, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 type TypeAssertion = ESTree.TSAsExpression | ESTree.TSTypeAssertion
@@ -62,7 +62,7 @@ function hasSafetyComment(node: ESTree.Node, justified: (owner: ESTree.Node) => 
   return parent.type !== "Program" && hasSafetyComment(parent, justified)
 }
 
-export const requireSafetyCommentForTypeAssertionRule = defineRule({
+export const requireSafetyCommentForTypeAssertionRule: Rule = defineRule({
   meta: {
     defaultOptions: [{ markers: ["SAFETY"] }],
     type: "problem",

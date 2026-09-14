@@ -1,4 +1,4 @@
-import type { ESTree } from "@oxlint/plugins"
+import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 function unwrapParentheses(node: ESTree.Expression): ESTree.Expression {
@@ -25,7 +25,7 @@ function isConditionalEmptyObjectSpread(node: ESTree.Expression): boolean {
   )
 }
 
-export const noConditionalEmptyObjectSpreadRule = defineRule({
+export const noConditionalEmptyObjectSpreadRule: Rule = defineRule({
   meta: {
     type: "suggestion",
     docs: {

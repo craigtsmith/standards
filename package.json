@@ -8,26 +8,36 @@
     "url": "git+https://github.com/craigtsmith/standards.git"
   },
   "files": [
-    "oxlint",
-    "oxfmt",
+    "dist",
     "fallow.jsonc",
     "tsconfig"
   ],
   "type": "module",
   "exports": {
-    "./oxlint": "./oxlint/config/index.ts",
-    "./oxlint/plugin": "./oxlint/plugin/index.ts",
-    "./oxfmt": "./oxfmt/index.ts",
+    "./oxlint": {
+      "types": "./dist/oxlint/config/index.d.ts",
+      "default": "./dist/oxlint/config/index.js"
+    },
+    "./oxlint/plugin": {
+      "types": "./dist/oxlint/plugin/index.d.ts",
+      "default": "./dist/oxlint/plugin/index.js"
+    },
+    "./oxfmt": {
+      "types": "./dist/oxfmt/index.d.ts",
+      "default": "./dist/oxfmt/index.js"
+    },
     "./fallow.jsonc": "./fallow.jsonc",
     "./tsconfig/*.json": "./tsconfig/*.json"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "fallow:audit": "fallow audit --base HEAD",
     "fallow:baseline": "fallow health --save-baseline fallow-health-baseline.json --baseline-mode identity; oxfmt fallow-health-baseline.json",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
+    "prepare": "pnpm build",
     "test": "vitest run oxlint",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

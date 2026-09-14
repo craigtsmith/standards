@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -8,4 +8,4 @@ const failurePaths = {
   "promise/prefer-await-to-then": "error",
 } satisfies Rules
 
-export const promiseRules = defineConfig({ rules: { ...failurePaths } })
+export const promiseRules: OxlintConfig = defineConfig({ rules: { ...failurePaths } })

@@ -1,4 +1,4 @@
-import type { ESTree, SourceCode } from "@oxlint/plugins"
+import type { ESTree, Rule, SourceCode } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import {
@@ -53,7 +53,7 @@ function unparsedParameter(
     : { name, type: annotation.typeAnnotation }
 }
 
-export const noUnknownParametersRule = defineRule({
+export const noUnknownParametersRule: Rule = defineRule({
   meta: {
     type: "problem",
     docs: {

@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 import { sortClasses } from "./perfectionist/sort-classes.ts"
@@ -34,4 +34,4 @@ const houseStyle = {
   ],
 } satisfies Rules
 
-export const perfectionistRules = defineConfig({ rules: { ...houseStyle } })
+export const perfectionistRules: OxlintConfig = defineConfig({ rules: { ...houseStyle } })

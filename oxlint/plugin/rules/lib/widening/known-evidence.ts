@@ -31,7 +31,7 @@ export interface EvidenceLookup {
 export function hasKnownEvidence(
   sourceCode: SourceCode,
   expression: ESTree.Expression,
-  visitedVariables = new Set<Variable>()
+  visitedVariables: Set<Variable> = new Set()
 ): boolean {
   if (isKnownEvidenceExpression(expression)) return true
 
@@ -69,7 +69,7 @@ export function hasKnownEvidence(
 export function hasKnownCallArgumentEvidence(
   lookup: EvidenceLookup,
   expression: ESTree.Expression,
-  visitedVariables = new Set<Variable>()
+  visitedVariables: Set<Variable> = new Set()
 ): boolean {
   const unwrapped = unwrapToAssertion(expression)
   if (unwrapped.type === "TSAsExpression" || unwrapped.type === "TSTypeAssertion") {

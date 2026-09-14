@@ -1,4 +1,4 @@
-import { defineConfig } from "oxlint"
+import { defineConfig, type OxlintConfig } from "oxlint"
 
 import type { Rules } from "./shared.ts"
 
@@ -12,4 +12,4 @@ const moduleSurface = {
   "import/no-unassigned-import": "off",
 } satisfies Rules
 
-export const importRules = defineConfig({ rules: { ...moduleSurface } })
+export const importRules: OxlintConfig = defineConfig({ rules: { ...moduleSurface } })

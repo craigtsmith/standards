@@ -1,7 +1,7 @@
 import type { Rule } from "../shared.ts"
 
 // Probed by ./sort-classes.probe.ts.
-export const sortClasses = [
+export const sortClasses: Rule = [
   "error",
   {
     newlinesBetween: 1,
@@ -74,4 +74,4 @@ export const sortClasses = [
       "unknown",
     ],
   },
-] satisfies Rule
+]

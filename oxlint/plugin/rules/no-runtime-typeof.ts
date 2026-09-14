@@ -1,4 +1,4 @@
-import type { ESTree, Options } from "@oxlint/plugins"
+import type { ESTree, Options, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 type RuntimeFunction = ESTree.ArrowFunctionExpression | ESTree.Function
@@ -40,7 +40,7 @@ function allowsTypeGuards(option: Options[number] | undefined): boolean {
   return option instanceof Object && !Array.isArray(option) && option["allowInTypeGuards"] === true
 }
 
-export const noRuntimeTypeofRule = defineRule({
+export const noRuntimeTypeofRule: Rule = defineRule({
   meta: {
     defaultOptions: [{ allowInTypeGuards: false }],
     type: "problem",

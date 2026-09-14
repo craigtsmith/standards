@@ -1,4 +1,4 @@
-import { eslintCompatPlugin } from "@oxlint/plugins"
+import { eslintCompatPlugin, type Plugin } from "@oxlint/plugins"
 
 import { maxCommentLinesRule } from "./rules/max-comment-lines.ts"
 import { noChainedTypeAssertionsRule } from "./rules/no-chained-type-assertions.ts"
@@ -17,7 +17,7 @@ import { noUnsafeDictionaryTypeRule } from "./rules/no-unsafe-dictionary-type.ts
 import { noWidenThenAssertRule } from "./rules/no-widen-then-assert.ts"
 import { requireSafetyCommentForTypeAssertionRule } from "./rules/require-safety-comment-for-type-assertion.ts"
 
-const configPlugin = eslintCompatPlugin({
+const configPlugin: Plugin = eslintCompatPlugin({
   meta: { name: "standards" },
   rules: {
     "max-comment-lines": maxCommentLinesRule,

@@ -1,5 +1,5 @@
 // Node types a /** block can be documentation for.
-export const DOCUMENTED = new Set([
+export const DOCUMENTED: ReadonlySet<string> = new Set([
   "AccessorProperty",
   "ClassDeclaration",
   "ExportDefaultDeclaration",
