@@ -7,7 +7,7 @@ export const DOCUMENTED: ReadonlySet<string> = new Set([
   "FunctionDeclaration",
   "ImportDeclaration",
   "MethodDefinition",
-  "ObjectProperty",
+  "Property",
   "PropertyDefinition",
   "TSDeclareFunction",
   "TSEnumDeclaration",

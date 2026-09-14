@@ -1,7 +1,8 @@
 import type { Comment, Context, Options, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
-import { DOCUMENTED } from "./lib/ast/documented-nodes.ts"
+import { headerFault, isHeader, isJsdocLike, jsdocFault } from "./lib/ast/doc-blocks.ts"
+import { exportedNames } from "./lib/ast/exported-declarations.ts"
 
 const DEFAULT_MAX = 2
 
@@ -15,51 +16,13 @@ interface CommentSpan {
   readonly why: string | null
 }
 
-// Null when the block has the JSDoc shape, otherwise the reason it does not.
-function malformed(comment: Comment): string | null {
-  const lines = comment.value.split("\n")
-  if (lines.length === 1) return null
-
-  if (!/^\*[ \t]*\r?$/u.test(lines[0] ?? "")) return "has text on its opening line"
-
-  if (!/^\s*$/u.test(lines.at(-1) ?? "")) return "has text on its closing line"
-
-  return lines.slice(1, -1).every((line) => /^\s*\*/u.test(line))
-    ? null
-    : "has a line without a leading *"
-}
-
-function documentsSomething(context: Context, comment: Comment): boolean {
-  if (context.sourceCode.getTokenBefore(comment) === null) return true
-
-  const token = context.sourceCode.getTokenAfter(comment)
-  if (token === null) return false
-
-  // A decorator is not indexed by range, so a block above one resolves to the
-  // whole program; a decorator always attaches to a declaration.
-  if (token.value === "@") return true
-
-  let node = context.sourceCode.getNodeByRangeIndex(token.start)
-
-  while (node !== null && node.start === token.start) {
-    if (DOCUMENTED.has(node.type)) return true
-
-    node = node.parent
-  }
-
-  return false
-}
-
-function jsdocReason(context: Context, comment: Comment): string | null {
-  const formFault = malformed(comment)
-  if (formFault !== null) return formFault
-
-  return documentsSomething(context, comment) ? null : "documents nothing"
-}
-
-function commentSpan(context: Context, comment: Comment): CommentSpan | null {
-  const jsdocLike = comment.type === "Block" && comment.value.startsWith("*")
-  const why = jsdocLike ? jsdocReason(context, comment) : null
+function commentSpan(
+  context: Context,
+  comment: Comment,
+  exported: ReadonlySet<string>
+): CommentSpan | null {
+  const jsdocLike = isJsdocLike(comment)
+  const why = jsdocLike ? jsdocFault(context, comment, exported) : null
   if (jsdocLike && why === null) return null
 
   const lineOf = (offset: number) => context.sourceCode.getLocFromIndex(offset).line
@@ -106,15 +69,31 @@ function configuredMax(option: Options[number] | undefined): number {
   return Number.isInteger(max) && max > 0 ? max : DEFAULT_MAX
 }
 
+// The file header, reported if it runs straight into code it does not document.
+function checkedHeader(
+  context: Context,
+  comments: readonly Comment[],
+  exported: ReadonlySet<string>
+): Comment | undefined {
+  const header = comments.find((comment) => isHeader(context, comment))
+
+  if (header !== undefined && headerFault(context, header, exported)) {
+    context.report({ messageId: "header", node: header })
+  }
+
+  return header
+}
+
 export const maxCommentLinesRule: Rule = defineRule({
   meta: {
     defaultOptions: [{ max: DEFAULT_MAX }],
     type: "suggestion",
     docs: {
       description:
-        "Limit a comment to a few lines. Adjacent line comments count as one run, and a single blank line does not break the run.",
+        "Limit a comment to a few lines. Adjacent line comments count as one run, and a single blank line does not break the run. A well-formed JSDoc block on an exported declaration is exempt, as is a file header on line 1 followed by a blank line; any other block is an ordinary comment.",
     },
     messages: {
+      header: "A file header must be followed by a blank line.",
       looseJsdoc: "This comment (not JSDoc - {{why}}) is {{lines}} lines; limit is {{max}}.",
       tooLong: "This comment is {{lines}} lines; limit is {{max}}.",
     },
@@ -131,13 +110,12 @@ export const maxCommentLinesRule: Rule = defineRule({
     return {
       Program(node) {
         const max = configuredMax(context.options[0])
-        const spans = node.comments
-          .filter((comment) => comment.type !== "Shebang")
-          .flatMap((comment) => {
-            const span = commentSpan(context, comment)
-
-            return span === null ? [] : [span]
-          })
+        const exported = exportedNames(node)
+        const comments = node.comments.filter((comment) => comment.type !== "Shebang")
+        const header = checkedHeader(context, comments, exported)
+        const spans = comments
+          .filter((comment) => comment !== header)
+          .flatMap((comment) => commentSpan(context, comment, exported) ?? [])
 
         for (const run of commentRuns(context, spans)) {
           const lines = run.endLine - run.startLine + 1
