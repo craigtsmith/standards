@@ -1,0 +1,126 @@
+{
+  "auto_install_extensions": { "tsgo": true },
+  "lsp": {
+    "oxlint": {
+      "initialization_options": {
+        "settings": {
+          "run": "onType",
+          "fixKind": "safe_fix",
+          "unusedDisableDirectives": "warn",
+        },
+      },
+    },
+    "typescript-ls": {
+      "settings": {
+        "typescript": {
+          "preferences": {
+            "importModuleSpecifier": "non-relative",
+            "preferTypeOnlyAutoImports": true,
+            "autoImportFileExcludePatterns": ["**/dist/**", "**/out/**"],
+          },
+          "updateImportsOnFileMove": { "enabled": "always" },
+          "inlayHints": {
+            "parameterNames": {
+              "enabled": "literals",
+              "suppressWhenArgumentMatchesName": true,
+            },
+            "parameterTypes": { "enabled": false },
+            "variableTypes": { "enabled": false },
+            "propertyDeclarationTypes": { "enabled": true },
+            "functionLikeReturnTypes": { "enabled": true },
+            "enumMemberValues": { "enabled": true },
+          },
+        },
+        "javascript": {
+          "preferences": { "importModuleSpecifier": "non-relative" },
+          "updateImportsOnFileMove": { "enabled": "always" },
+        },
+      },
+    },
+    "oxfmt": { "initialization_options": { "settings": { "run": "onSave" } } },
+    "vscode-css-language-server": {
+      "settings": { "css": { "lint": { "unknownAtRules": "ignore" } } },
+    },
+  },
+  "languages": {
+    "TypeScript": {
+      "language_servers": [
+        "fallow",
+        "typescript-ls",
+        "oxlint",
+        "oxfmt",
+        "tailwindcss-language-server",
+        "!vtsls",
+        "!typescript-language-server",
+        "!eslint",
+      ],
+      "format_on_save": "on",
+      "formatter": [
+        { "language_server": { "name": "oxfmt" } },
+        { "code_action": "source.fixAll.oxc" },
+      ],
+      "prettier": { "allowed": false },
+    },
+    "TSX": {
+      "language_servers": [
+        "fallow",
+        "typescript-ls",
+        "oxlint",
+        "oxfmt",
+        "tailwindcss-language-server",
+        "!vtsls",
+        "!typescript-language-server",
+        "!eslint",
+      ],
+      "format_on_save": "on",
+      "formatter": [
+        { "language_server": { "name": "oxfmt" } },
+        { "code_action": "source.fixAll.oxc" },
+      ],
+      "prettier": { "allowed": false },
+    },
+    "JavaScript": {
+      "language_servers": [
+        "fallow",
+        "typescript-ls",
+        "oxlint",
+        "oxfmt",
+        "tailwindcss-language-server",
+        "!vtsls",
+        "!typescript-language-server",
+        "!eslint",
+      ],
+      "format_on_save": "on",
+      "formatter": [
+        { "language_server": { "name": "oxfmt" } },
+        { "code_action": "source.fixAll.oxc" },
+      ],
+      "prettier": { "allowed": false },
+    },
+    "JSON": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }],
+    },
+    "JSONC": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }],
+    },
+    "Markdown": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }],
+    },
+    "YAML": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }],
+    },
+  },
+  "inlay_hints": {
+    "enabled": true,
+    "show_type_hints": false,
+    "show_parameter_hints": true,
+  },
+}
