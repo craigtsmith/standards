@@ -1,0 +1,91 @@
+{
+  "name": "@craigts.dev/standards",
+  "version": "0.1.0",
+  "description": "oxlint, oxfmt, fallow and tsconfig presets for craigts.dev projects.",
+  "keywords": [
+    "fallow",
+    "oxfmt",
+    "oxlint",
+    "oxlint-plugin",
+    "tsconfig",
+    "typescript"
+  ],
+  "homepage": "https://github.com/craigtsmith/standards#readme",
+  "bugs": {
+    "url": "https://github.com/craigtsmith/standards/issues"
+  },
+  "license": "MIT",
+  "author": "craig t smith",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/craigtsmith/standards.git"
+  },
+  "files": [
+    "dist",
+    "fallow",
+    "tsconfig"
+  ],
+  "type": "module",
+  "exports": {
+    "./oxlint": {
+      "types": "./dist/oxlint/config/index.d.ts",
+      "default": "./dist/oxlint/config/index.js"
+    },
+    "./oxlint/plugin": {
+      "types": "./dist/oxlint/plugin/index.d.ts",
+      "default": "./dist/oxlint/plugin/index.js"
+    },
+    "./oxfmt": {
+      "types": "./dist/oxfmt/index.d.ts",
+      "default": "./dist/oxfmt/index.js"
+    },
+    "./fallow/preset.jsonc": "./fallow/preset.jsonc",
+    "./tsconfig/*.json": "./tsconfig/*.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
+    "fallow:audit": "fallow audit --base HEAD",
+    "fallow:baseline": "fallow health --save-baseline fallow-health-baseline.json --baseline-mode identity; oxfmt fallow-health-baseline.json",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "lint": "pnpm build && oxlint .",
+    "lint:fix": "pnpm build && oxlint --fix .",
+    "test": "vitest run oxlint",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepack": "pnpm build"
+  },
+  "dependencies": {
+    "eslint-plugin-jsdoc": "^64.5.2",
+    "eslint-plugin-perfectionist": "^5.10.1",
+    "eslint-plugin-sonarjs": "^4.2.0"
+  },
+  "devDependencies": {
+    "@oxlint/plugins": "1.81.0",
+    "@types/node": "^26.2.0",
+    "fallow": "^3.18.0",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.81.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "peerDependencies": {
+    "@oxlint/plugins": "^1.81.0",
+    "fallow": "^3.18.0",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.81.0",
+    "oxlint-tsgolint": "^7.0.2001"
+  },
+  "peerDependenciesMeta": {
+    "fallow": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.14"
+  },
+  "packageManager": "pnpm@10.34.5"
+}

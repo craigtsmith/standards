@@ -1,0 +1,21 @@
+// Node types a /** block can be documentation for.
+export const DOCUMENTED: ReadonlySet<string> = new Set([
+  "AccessorProperty",
+  "ClassDeclaration",
+  "ExportDefaultDeclaration",
+  "ExportNamedDeclaration",
+  "FunctionDeclaration",
+  "ImportDeclaration",
+  "MethodDefinition",
+  "Property",
+  "PropertyDefinition",
+  "TSDeclareFunction",
+  "TSEnumDeclaration",
+  "TSEnumMember",
+  "TSInterfaceDeclaration",
+  "TSMethodSignature",
+  "TSModuleDeclaration",
+  "TSPropertySignature",
+  "TSTypeAliasDeclaration",
+  "VariableDeclaration",
+])
