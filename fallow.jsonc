@@ -1,5 +1,5 @@
 {
-  "$schema": "../../node_modules/fallow/schema.json",
+  "$schema": "./node_modules/fallow/schema.json",
   "rules": {
     "unused-dependencies": "error",
     "unused-dev-dependencies": "error",
