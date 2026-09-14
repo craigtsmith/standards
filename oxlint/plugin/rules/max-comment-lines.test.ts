@@ -13,7 +13,7 @@ const tooLong = (lines: number, max = 2) => ({
 
 const DOC = "/**\n * one\n * two\n * three\n */\n"
 const INDENTED_DOC = "  /**\n   * one\n   * two\n   * three\n   */\n"
-const unexported = looseJsdoc(5, "documents an unexported declaration")
+const unexported = looseJsdoc(5, "documents an unexported declaration and carries no tag")
 const header = { messageId: "header" }
 
 ruleTester.run("max-comment-lines", maxCommentLinesRule, {
@@ -39,7 +39,12 @@ ruleTester.run("max-comment-lines", maxCommentLinesRule, {
       code: "/**\n * one\n two\n * three\n */\nexport function f() {}",
       errors: [looseJsdoc(5, "has a line without a leading *")],
     },
-    // A JSDoc-shaped block on something the module keeps to itself is a comment.
+    // A JSDoc-shaped block on something the module keeps to itself is a comment
+    // unless it carries a tag. An inline `{@link}` is not one.
+    {
+      code: "\n/**\n * one {@link two}\n * three\n * four\n */\nfunction f() {}",
+      errors: [unexported],
+    },
     { code: `\n${DOC}const iconLookup = { note: 1 }`, errors: [unexported] },
     { code: `\n${DOC}function f() {}`, errors: [unexported] },
     { code: `\n${DOC}class C {}`, errors: [unexported] },
@@ -92,6 +97,11 @@ ruleTester.run("max-comment-lines", maxCommentLinesRule, {
     `${DOC}const a = 1\nexport { a as b }`,
     `${DOC}const a = 1\nexport default a`,
     `${DOC}const a = 1\nexport = a`,
+    // A block on something private is JSDoc when it carries a tag.
+    "\n/**\n * one\n * two\n * @returns three\n */\nfunction f() { return 1 }",
+    "\n/**\n * one\n * two\n * three\n *\n * @param a - four\n * @returns five\n */\nfunction f(a: number) { return a }",
+    "\n/**\n * one\n * two\n * @type {number}\n */\nconst a = 1\nconsole.log(a)",
+    "class C {\n  /**\n   * one\n   * two\n   * @returns three\n   */\n  method() { return 1 }\n}\nnew C()",
     // Ambient declarations are public by definition.
     `${DOC}declare const a: number`,
     `declare module "m" {\n${INDENTED_DOC}  const a: number\n}`,

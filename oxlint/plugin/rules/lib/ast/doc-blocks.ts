@@ -43,6 +43,12 @@ function documented(context: Context, token: Token | null): ESTree.Node | null {
   return nodesStartingAt(context, token.start).find((node) => DOCUMENTED.has(node.type)) ?? null
 }
 
+// A tag at the start of a line, as opposed to an inline `{@link}`.
+const BLOCK_TAG = /^[ \t]*\*?[ \t]*@\w+/mu
+
+// A block on something private is JSDoc only if it states a contract, not just prose.
+const hasBlockTag = (comment: Comment): boolean => BLOCK_TAG.test(comment.value)
+
 // Everything in a declaration file is ambient, so all of it is public.
 const isPublic = (context: Context, node: ESTree.Node, exported: ReadonlySet<string>): boolean =>
   context.filename.endsWith(".d.ts") || isPublicDeclaration(node, exported)
@@ -61,7 +67,9 @@ function placementFault(
   const node = documented(context, token)
   if (node === null) return "documents nothing"
 
-  return isPublic(context, node, exported) ? null : "documents an unexported declaration"
+  if (isPublic(context, node, exported) || hasBlockTag(comment)) return null
+
+  return "documents an unexported declaration and carries no tag"
 }
 
 /**
