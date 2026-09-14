@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "module": "nodenext",
+    "noEmit": false,
+    "rootDir": "${configDir}/src",
+    "outDir": "${configDir}/dist",
+    "sourceMap": true
+  }
+}

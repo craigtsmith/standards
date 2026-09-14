@@ -1,0 +1,21 @@
+// Node types a /** block can be documentation for.
+export const DOCUMENTED = new Set([
+  "AccessorProperty",
+  "ClassDeclaration",
+  "ExportDefaultDeclaration",
+  "ExportNamedDeclaration",
+  "FunctionDeclaration",
+  "ImportDeclaration",
+  "MethodDefinition",
+  "ObjectProperty",
+  "PropertyDefinition",
+  "TSDeclareFunction",
+  "TSEnumDeclaration",
+  "TSEnumMember",
+  "TSInterfaceDeclaration",
+  "TSMethodSignature",
+  "TSModuleDeclaration",
+  "TSPropertySignature",
+  "TSTypeAliasDeclaration",
+  "VariableDeclaration",
+])
