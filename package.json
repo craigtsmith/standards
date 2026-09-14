@@ -2,6 +2,11 @@
   "name": "@craigts.dev/standards",
   "version": "0.0.1",
   "private": true,
+  "description": "oxlint, oxfmt, fallow and tsconfig presets for craigts.dev projects.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/craigtsmith/standards.git"
+  },
   "files": [
     "oxlint",
     "oxfmt",
@@ -17,6 +22,8 @@
     "./tsconfig/*.json": "./tsconfig/*.json"
   },
   "scripts": {
+    "fallow:audit": "fallow audit --base HEAD",
+    "fallow:baseline": "fallow health --save-baseline fallow-health-baseline.json --baseline-mode identity; oxfmt fallow-health-baseline.json",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint .",
@@ -34,6 +41,14 @@
     "fallow": "^3.18.0",
     "oxfmt": "^0.65.0",
     "oxlint": "^1.81.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.11"
-  }
+  },
+  "peerDependencies": {
+    "@oxlint/plugins": "1.81.0",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.81.0"
+  },
+  "packageManager": "pnpm@10.34.5"
 }

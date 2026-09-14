@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "extends": ["./fallow.jsonc"],
+  // The probes are lint fixtures: oxlint reads them, nothing imports them.
+  "entry": ["oxfmt.config.ts", "oxlint.config.ts", "oxlint/config/rules/perfectionist/*.probe.ts"],
+  "boundaries": {
+    "coverage": { "allowUnmatched": ["*.config.ts"] },
+    // Declared narrow to wide: an earlier zone wins where patterns overlap.
+    "zones": [
+      { "name": "plugin/ast", "patterns": ["oxlint/plugin/rules/lib/ast/**"] },
+      { "name": "plugin/types", "patterns": ["oxlint/plugin/rules/lib/types/**"] },
+      { "name": "plugin/widening", "patterns": ["oxlint/plugin/rules/lib/widening/**"] },
+      { "name": "plugin/rules", "patterns": ["oxlint/plugin/**"] },
+      { "name": "config", "patterns": ["oxlint/config/**"] },
+      { "name": "oxfmt", "patterns": ["oxfmt/**"] }
+    ],
+    "rules": [
+      { "from": "plugin/ast", "allow": [] },
+      { "from": "plugin/types", "allow": ["plugin/ast"] },
+      { "from": "plugin/widening", "allow": ["plugin/ast", "plugin/types"] },
+      { "from": "plugin/rules", "allow": ["plugin/ast", "plugin/types", "plugin/widening"] },
+      { "from": "config", "allow": [] },
+      { "from": "oxfmt", "allow": [] }
+    ]
+  }
+}
