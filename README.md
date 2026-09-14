@@ -12,7 +12,7 @@ onlyBuiltDependencies:
 
 Each package then declares `"@craigts.dev/standards": "catalog:"`. The allow-list key must carry the commit: pnpm 10 approves a git artifact's build scripts only by its commit-qualified key, never by name.
 
-`exports` points at `dist/`, which `pnpm build` (tsc, `tsconfig.build.json`) emits and `prepare` runs on install. Node will not type-strip `.ts` under `node_modules`, and oxlint and oxfmt load their config through Node, so the package has to ship JavaScript. `oxlint`, `@oxlint/plugins` and `oxfmt` are peer dependencies: the plugin rules run inside the consumer's oxlint.
+`exports` points at `dist/`, which `pnpm build` (tsc, `tsconfig.build.json`) emits and `prepare` runs on install. Node will not type-strip `.ts` under `node_modules`, and oxlint and oxfmt load their config through Node, so the package has to ship JavaScript. `oxlint`, `@oxlint/plugins`, `oxlint-tsgolint` and `oxfmt` are peer dependencies: the plugin rules run inside the consumer's oxlint, and the preset switches on type-aware linting, which oxlint delegates to `oxlint-tsgolint`.
 
 | Export                                   | Use                                                           |
 | ---------------------------------------- | ------------------------------------------------------------- |
