@@ -1,15 +1,23 @@
 import { maxCommentLinesRule } from "./max-comment-lines.ts"
 import { ruleTester } from "./rule-tester.ts"
 
-const looseJsdoc = (lines: number, why: string, max = 2) => ({
+const looseJsdoc = (lines: number, why: string, max = 3) => ({
   data: { lines: String(lines), max: String(max), why },
   messageId: "looseJsdoc",
 })
 
-const tooLong = (lines: number, max = 2) => ({
+const tooLong = (lines: number, max = 3) => ({
   data: { lines: String(lines), max: String(max) },
   messageId: "tooLong",
 })
+
+const docTooLong = (lines: number, max = 15) => ({
+  data: { lines: String(lines), max: String(max) },
+  messageId: "docTooLong",
+})
+
+// A well-formed block of `lines` lines, description only.
+const docOf = (lines: number) => `/**\n${" * prose\n".repeat(lines - 2)} */\n`
 
 const DOC = "/**\n * one\n * two\n * three\n */\n"
 const INDENTED_DOC = "  /**\n   * one\n   * two\n   * three\n   */\n"
@@ -18,10 +26,10 @@ const header = { messageId: "header" }
 
 ruleTester.run("max-comment-lines", maxCommentLinesRule, {
   invalid: [
-    { code: "// one\n// two\n// three\nconst a = 1", errors: [tooLong(3)] },
-    { code: "/* one\n   two\n   three */\nconst a = 1", errors: [tooLong(3)] },
+    { code: "// one\n// two\n// three\n// four\nconst a = 1", errors: [tooLong(4)] },
+    { code: "/* one\n   two\n   three\n   four */\nconst a = 1", errors: [tooLong(4)] },
     // A line holding only `//` bridges the run.
-    { code: "// one\n//\n// three\nconst a = 1", errors: [tooLong(3)] },
+    { code: "// one\n//\n// three\n// four\nconst a = 1", errors: [tooLong(4)] },
     // A single blank line bridges the run too, and counts as a line of it.
     { code: "// one\n// two\n\n// three\n// four\nconst a = 1", errors: [tooLong(5)] },
     { code: "// one\n// two\nconst a = 1", errors: [tooLong(2, 1)], options: [{ max: 1 }] },
@@ -69,14 +77,36 @@ ruleTester.run("max-comment-lines", maxCommentLinesRule, {
     // Two blocks on line 1 cannot both be the header.
     { code: `${DOC}\n${DOC}const a = 1`, errors: [unexported] },
     {
-      code: "// one\n// two\n// three\n// four\nconst a = 1",
-      errors: [tooLong(4, 3)],
-      options: [{ max: 3 }],
+      code: "// one\n// two\n// three\n// four\n// five\nconst a = 1",
+      errors: [tooLong(5, 4)],
+      options: [{ max: 4 }],
+    },
+    // Documentation has a limit of its own, fifteen lines by default.
+    { code: `\n${docOf(16)}export const a = 1`, errors: [docTooLong(16)] },
+    {
+      code: `\n${docOf(5)}export const a = 1`,
+      errors: [docTooLong(5, 4)],
+      options: [{ maxDoc: 4 }],
+    },
+    // A file header gets the longer limit, and answers to it.
+    { code: `${docOf(21)}\nconst a = 1`, errors: [docTooLong(21, 20)] },
+    {
+      code: `${docOf(5)}\nconst a = 1`,
+      errors: [docTooLong(5, 4)],
+      options: [{ maxHeader: 4 }],
+    },
+    // The two limits are independent.
+    {
+      code: "// one\n// two\nconst a = 1",
+      errors: [tooLong(2, 1)],
+      options: [{ max: 1, maxDoc: 30 }],
     },
   ],
   valid: [
     "// one\nconst a = 1",
     "// one\n// two\nconst a = 1",
+    "// one\n// two\n// three\nconst a = 1",
+    "/* one\n   two\n   three */\nconst a = 1",
     "/* one\n   two */\nconst a = 1",
     // Two blank lines end a run of line comments; one does not.
     "// one\n// two\n\n\n// three\nconst a = 1",
@@ -113,6 +143,12 @@ ruleTester.run("max-comment-lines", maxCommentLinesRule, {
     `${DOC}\n\nimport { a } from "./a.ts"\nexport { a }`,
     `#!/usr/bin/env node\n${DOC}\nconst a = 1`,
     DOC,
-    { code: "// one\n// two\n// three\nconst a = 1", options: [{ max: 3 }] },
+    { code: "// one\n// two\n// three\n// four\nconst a = 1", options: [{ max: 4 }] },
+    // Documentation up to the doc limit, which the three-line limit does not touch.
+    `\n${docOf(15)}export const a = 1`,
+    { code: `\n${docOf(30)}export const a = 1`, options: [{ maxDoc: 30 }] },
+    // A header of sixteen lines is over the doc limit and under its own.
+    `${docOf(16)}\nconst a = 1`,
+    `${docOf(20)}\nconst a = 1`,
   ],
 })

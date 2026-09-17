@@ -9,7 +9,6 @@ export interface AliasArgument {
 /**
  * Reads the plain identifier a type reference names.
  *
- * @param type - The type reference.
  * @returns The name, or null when the reference is a qualified name.
  */
 export function typeReferenceName(type: ESTree.TSTypeReference): string | null {

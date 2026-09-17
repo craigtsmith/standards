@@ -129,8 +129,6 @@ export function enclosingFunction(node: ESTree.Node): FunctionExpression | null 
  * source text.
  *
  * @param sourceCode - The source code used to read a computed key's text.
- * @param key - The property key to name.
- * @returns The key's name.
  */
 export function sourceKeyName(sourceCode: SourceCode, key: ESTree.PropertyKey): string {
   if (key.type === "Identifier" || key.type === "PrivateIdentifier") return key.name

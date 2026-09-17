@@ -61,7 +61,6 @@ export function hasKnownEvidence(
  * of the variable it names.
  *
  * @param lookup - The source and type environment used to resolve identifiers and types.
- * @param expression - The argument expression.
  * @param visitedVariables - Variables already followed, so a cycle stops the walk.
  * @returns Whether the argument brings a known type into the `unknown`
  * parameter.

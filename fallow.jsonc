@@ -15,7 +15,11 @@
     "stale-suppressions": "error"
   },
   // Oxlint config loads through import.meta.resolve
-  "ignoreDependencies": ["eslint-plugin-perfectionist", "eslint-plugin-sonarjs"],
+  "ignoreDependencies": [
+    "eslint-plugin-jsdoc",
+    "eslint-plugin-perfectionist",
+    "eslint-plugin-sonarjs"
+  ],
   "boundaries": { "coverage": { "requireAllFiles": true } },
   "health": {
     "maxCyclomatic": 10,

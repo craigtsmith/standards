@@ -3,6 +3,7 @@ import { defineConfig as defineOxlintConfig, type OxlintConfig } from "oxlint"
 
 import { eslintRules } from "./rules/eslint.ts"
 import { importRules } from "./rules/import.ts"
+import { jsdocJsRules } from "./rules/jsdoc-js.ts"
 import { jsdocRules } from "./rules/jsdoc.ts"
 import { oxcRules } from "./rules/oxc.ts"
 import { perfectionistRules } from "./rules/perfectionist.ts"
@@ -28,6 +29,7 @@ const base = defineOxlintConfig({
   extends: [
     eslintRules,
     importRules,
+    jsdocJsRules,
     jsdocRules,
     oxcRules,
     perfectionistRules,
@@ -41,6 +43,8 @@ const base = defineOxlintConfig({
   ],
   jsPlugins: [
     "@craigts.dev/standards/oxlint/plugin",
+    // oxlint reserves `jsdoc` for its native port, so the real plugin takes an alias.
+    { name: "jsdoc-js", specifier: resolve("eslint-plugin-jsdoc") },
     resolve("eslint-plugin-perfectionist"),
     resolve("eslint-plugin-sonarjs"),
   ],

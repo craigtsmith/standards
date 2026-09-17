@@ -38,7 +38,6 @@ const SYNTACTIC_VALUES = new Set([
  * Gives the expression a type assertion applies to, with any parentheses removed.
  *
  * @param node - The `as` or angle-bracket assertion.
- * @returns The asserted expression.
  */
 export function assertedExpression(node: TypeAssertion): ESTree.Expression {
   return unwrapExpressionParentheses(node.expression)

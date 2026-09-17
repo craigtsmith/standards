@@ -4,33 +4,51 @@ import { defineRule } from "@oxlint/plugins"
 import { headerFault, isHeader, isJsdocLike, jsdocFault } from "./lib/ast/doc-blocks.ts"
 import { exportedNames } from "./lib/ast/exported-declarations.ts"
 
-const DEFAULT_MAX = 2
+const DEFAULT_MAX = 3
+const DEFAULT_MAX_DOC = 15
+const DEFAULT_MAX_HEADER = 20
 
 // One comment as the reader sees it: a block, or a run of adjacent line comments.
 interface CommentSpan {
   readonly end: number
   readonly endLine: number
   readonly joinable: boolean
+  readonly kind: SpanKind
   readonly start: number
   readonly startLine: number
   readonly why: string | null
+}
+
+// What the comment is, which decides the limit it answers to.
+type SpanKind = "comment" | "documentation" | "header"
+
+// Why a block is an ordinary comment rather than documentation, if it is.
+const commentFault = (
+  context: Context,
+  comment: Comment,
+  exported: ReadonlySet<string>
+): string | null => (isJsdocLike(comment) ? jsdocFault(context, comment, exported) : null)
+
+function spanKind(comment: Comment, header: boolean, why: string | null): SpanKind {
+  if (header) return "header"
+
+  return isJsdocLike(comment) && why === null ? "documentation" : "comment"
 }
 
 function commentSpan(
   context: Context,
   comment: Comment,
   exported: ReadonlySet<string>
-): CommentSpan | null {
-  const jsdocLike = isJsdocLike(comment)
-  const why = jsdocLike ? jsdocFault(context, comment, exported) : null
-  if (jsdocLike && why === null) return null
-
+): CommentSpan {
+  const header = isHeader(context, comment)
+  const why = header ? null : commentFault(context, comment, exported)
   const lineOf = (offset: number) => context.sourceCode.getLocFromIndex(offset).line
 
   return {
     end: comment.end,
     endLine: lineOf(comment.end),
     joinable: comment.type === "Line",
+    kind: spanKind(comment, header, why),
     start: comment.start,
     startLine: lineOf(comment.start),
     why,
@@ -61,38 +79,61 @@ function commentRuns(context: Context, spans: readonly CommentSpan[]): CommentSp
   return runs
 }
 
-function configuredMax(option: Options[number] | undefined): number {
-  if (!(option instanceof Object) || Array.isArray(option)) return DEFAULT_MAX
+function configuredLimit(
+  option: Options[number] | undefined,
+  key: string,
+  fallback: number
+): number {
+  if (!(option instanceof Object) || Array.isArray(option)) return fallback
 
-  const max = Number(option["max"])
+  const limit = Number(option[key])
 
-  return Number.isInteger(max) && max > 0 ? max : DEFAULT_MAX
+  return Number.isInteger(limit) && limit > 0 ? limit : fallback
 }
 
-// The file header, reported if it runs straight into code it does not document.
-function checkedHeader(
+function messageFor(run: CommentSpan): "docTooLong" | "looseJsdoc" | "tooLong" {
+  if (run.kind !== "comment") return "docTooLong"
+
+  return run.why === null ? "tooLong" : "looseJsdoc"
+}
+
+function reportRun(context: Context, run: CommentSpan, limit: number): void {
+  const lines = run.endLine - run.startLine + 1
+  if (lines <= limit) return
+
+  context.report({
+    data: { lines: String(lines), max: String(limit), why: run.why ?? "" },
+    messageId: messageFor(run),
+    loc: {
+      end: context.sourceCode.getLocFromIndex(run.end),
+      start: context.sourceCode.getLocFromIndex(run.start),
+    },
+  })
+}
+
+// Report the file header if it runs straight into code it does not document.
+function checkHeader(
   context: Context,
   comments: readonly Comment[],
   exported: ReadonlySet<string>
-): Comment | undefined {
+): void {
   const header = comments.find((comment) => isHeader(context, comment))
 
   if (header !== undefined && headerFault(context, header, exported)) {
     context.report({ messageId: "header", node: header })
   }
-
-  return header
 }
 
 export const maxCommentLinesRule: Rule = defineRule({
   meta: {
-    defaultOptions: [{ max: DEFAULT_MAX }],
+    defaultOptions: [{ max: DEFAULT_MAX, maxDoc: DEFAULT_MAX_DOC, maxHeader: DEFAULT_MAX_HEADER }],
     type: "suggestion",
     docs: {
       description:
-        "Limit a comment to a few lines. Adjacent line comments count as one run, and a single blank line does not break the run. A well-formed JSDoc block on an exported declaration is exempt, as is a file header on line 1 followed by a blank line; any other block is an ordinary comment.",
+        "Limit a comment to three lines, a documentation block to fifteen and a file header to twenty. Adjacent line comments count as one run, and a single blank line does not break the run. A well-formed JSDoc block on an exported declaration is documentation, and a block on line 1 before any token is the header; any other block is an ordinary comment.",
     },
     messages: {
+      docTooLong: "This doc block is {{lines}} lines; limit is {{max}}.",
       header: "A file header must be followed by a blank line.",
       looseJsdoc: "This comment (not JSDoc - {{why}}) is {{lines}} lines; limit is {{max}}.",
       tooLong: "This comment is {{lines}} lines; limit is {{max}}.",
@@ -100,8 +141,12 @@ export const maxCommentLinesRule: Rule = defineRule({
     schema: [
       {
         additionalProperties: false,
-        properties: { max: { minimum: 1, type: "integer" } },
         type: "object",
+        properties: {
+          max: { minimum: 1, type: "integer" },
+          maxDoc: { minimum: 1, type: "integer" },
+          maxHeader: { minimum: 1, type: "integer" },
+        },
       },
     ],
   },
@@ -109,26 +154,19 @@ export const maxCommentLinesRule: Rule = defineRule({
   createOnce(context) {
     return {
       Program(node) {
-        const max = configuredMax(context.options[0])
-        const exported = exportedNames(node)
+        const option = context.options[0]
+        const limits = {
+          comment: configuredLimit(option, "max", DEFAULT_MAX),
+          documentation: configuredLimit(option, "maxDoc", DEFAULT_MAX_DOC),
+          header: configuredLimit(option, "maxHeader", DEFAULT_MAX_HEADER),
+        }
         const comments = node.comments.filter((comment) => comment.type !== "Shebang")
-        const header = checkedHeader(context, comments, exported)
-        const spans = comments
-          .filter((comment) => comment !== header)
-          .flatMap((comment) => commentSpan(context, comment, exported) ?? [])
+        const exported = exportedNames(node)
+        checkHeader(context, comments, exported)
+        const spans = comments.map((comment) => commentSpan(context, comment, exported))
 
         for (const run of commentRuns(context, spans)) {
-          const lines = run.endLine - run.startLine + 1
-          if (lines <= max) continue
-
-          context.report({
-            data: { lines: String(lines), max: String(max), why: run.why ?? "" },
-            messageId: run.why === null ? "tooLong" : "looseJsdoc",
-            loc: {
-              end: context.sourceCode.getLocFromIndex(run.end),
-              start: context.sourceCode.getLocFromIndex(run.start),
-            },
-          })
+          reportRun(context, run, limits[run.kind])
         }
       },
     }
