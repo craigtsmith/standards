@@ -4,6 +4,8 @@ import type { Rules } from "./shared.ts"
 
 // The module graph.
 const moduleSurface = {
+  // Style category, so off unless named here. Imports belong at the top.
+  "import/first": "error",
   // fallow reports cycles too, with the full path; this one is faster and
   // works while editing, so both stay.
   "import/no-cycle": "error",
