@@ -12,6 +12,22 @@ ruleTester.run("no-conditional-empty-object-spread", noConditionalEmptyObjectSpr
       code: "const a = { ...(a ? { a } : {}), ...(b ? { b } : {}) }",
       errors: [{ messageId: "avoid" }, { messageId: "avoid" }],
     },
+    // An assertion on the empty branch does not change the construct.
+    {
+      code: "const a = { ...(flag ? ({} as Extra) : { extra }) }",
+      errors: [{ messageId: "avoid" }],
+    },
+    { code: "const a = { ...(flag ? {} as Extra : { extra }) }", errors: [{ messageId: "avoid" }] },
+    {
+      code: "const a = { ...(flag ? { extra } : ({}) satisfies Extra) }",
+      errors: [{ messageId: "avoid" }],
+    },
+    { code: "const a = { ...(flag ? { extra } : <Extra>{}) }", errors: [{ messageId: "avoid" }] },
+    { code: "const a = { ...(flag ? { extra } : {}!) }", errors: [{ messageId: "avoid" }] },
+    {
+      code: "const a = { ...(flag ? { extra } : (({} as Extra) satisfies Extra)) }",
+      errors: [{ messageId: "avoid" }],
+    },
   ],
   valid: [
     "const a = { ...base }",
@@ -20,7 +36,7 @@ ruleTester.run("no-conditional-empty-object-spread", noConditionalEmptyObjectSpr
     // An array spread is a different construct.
     "const a = [...(flag ? [1] : [])]",
     "fn(...(flag ? [1] : []))",
-    // Only a literal `{}` counts as empty; an asserted one is left alone.
-    "const a = { ...(flag ? { extra } : ({} as Extra)) }",
+    // An assertion on a non-empty branch does not make it empty.
+    "const a = { ...(flag ? ({ extra } as Extra) : withoutExtra) }",
   ],
 })

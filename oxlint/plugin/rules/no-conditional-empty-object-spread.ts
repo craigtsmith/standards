@@ -1,20 +1,16 @@
 import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
-import { unwrapExpressionParentheses } from "./lib/ast/expressions.ts"
+import { isEmptyObjectExpression, unwrapExpressionParentheses } from "./lib/ast/expressions.ts"
 import { ruleDocs } from "./lib/rule-meta.ts"
-
-// A literal `{}` only: an asserted `{} as T` is left alone.
-function isBareEmptyObject(node: ESTree.Expression): boolean {
-  return node.type === "ObjectExpression" && node.properties.length === 0
-}
 
 function isConditionalEmptyObjectSpread(node: ESTree.Expression): boolean {
   const conditional = unwrapExpressionParentheses(node)
 
   return (
     conditional.type === "ConditionalExpression" &&
-    (isBareEmptyObject(conditional.consequent) || isBareEmptyObject(conditional.alternate))
+    (isEmptyObjectExpression(conditional.consequent) ||
+      isEmptyObjectExpression(conditional.alternate))
   )
 }
 
