@@ -22,9 +22,7 @@ const base = defineOxfmtConfig({
     "**/.astro",
     "**/node_modules",
     "**/.claude",
-    "**/.fixture-working",
     "**/pnpm-lock.yaml",
-    "**/drizzle/**/snapshot.json",
   ],
 })
 

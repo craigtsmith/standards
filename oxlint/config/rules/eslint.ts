@@ -20,8 +20,7 @@ const cognitiveLoad = {
   "eslint/max-nested-callbacks": ["error", 3],
   "eslint/max-params": ["error", 3],
   "eslint/max-statements": ["error", 10],
-  // sonarjs/no-redundant-assignments stays too. Neither subsumes the other:
-  // on one function they reported different lines.
+  // sonarjs/no-redundant-assignments detects a different pattern, so both stay.
   "eslint/no-useless-assignment": "error",
 } satisfies Rules
 

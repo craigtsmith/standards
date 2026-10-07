@@ -21,8 +21,8 @@ const typeSystemSafety = {
 const typeSystemPrecision = {
   "typescript/consistent-type-definitions": ["error", "interface"],
   "typescript/no-deprecated": "error",
-  // The contracts pair an empty abstract class with an interface that only
-  // extends; the option is typescript-eslint's own escape for that shape.
+  // Allows an empty interface that extends one other type: with interfaces
+  // preferred over aliases, that is how a type gets a second name.
   "typescript/no-empty-object-type": ["error", { allowInterfaces: "with-single-extends" }],
   "typescript/no-invalid-void-type": "error",
   "typescript/no-mixed-enums": "error",
@@ -70,11 +70,7 @@ const moduleSurface = {
   // would win over this one through `extends`.
   "typescript/class-methods-use-this": [
     "error",
-    {
-      exceptMethods: ["routes"],
-      ignoreClassesWithImplements: "public-fields",
-      ignoreOverrideMethods: true,
-    },
+    { ignoreClassesWithImplements: "public-fields", ignoreOverrideMethods: true },
   ],
 } satisfies Rules
 

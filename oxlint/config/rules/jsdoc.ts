@@ -4,7 +4,7 @@ import type { Rules } from "./shared.ts"
 
 // A tag is optional, and wrong once written. Nothing here demands a tag exist,
 // so `require-param`, `require-returns`, `require-property` and `require-yields`
-// are absent. The rules the port does not carry are in `jsdoc-js.ts`.
+// are absent.
 const contract = {
   "jsdoc/check-access": "error",
   "jsdoc/check-property-names": "error",

@@ -22,9 +22,7 @@ abstract class Base {
     return this.weight
   }
 }
-/**
- * Test Class for sorting
- */
+
 export abstract class Probe extends Base {
   [index: number]: string
   [key: string]: unknown

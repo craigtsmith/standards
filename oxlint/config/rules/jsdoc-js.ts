@@ -1,8 +1,4 @@
-/**
- * The doc rules oxlint's native `jsdoc` port does not carry, from `eslint-plugin-jsdoc`
- * under the alias `jsdoc-js`; oxlint reserves the `jsdoc` prefix. Everything the port
- * does carry stays in `jsdoc.ts`, where it runs in Rust. Nothing belongs in both files.
- */
+// Only the doc rules the native port in `jsdoc.ts` does not carry.
 
 import { defineConfig, type OxlintConfig } from "oxlint"
 
@@ -32,8 +28,8 @@ const contract = {
 
 // A block has to say something the signature does not.
 const cognitiveLoad = {
-  // Warning, not error: the fix is deleting a tag, and consumers have tags to
-  // delete. Raise to error once they are gone.
+  // A warning: the rule compares a description's words with the name, so a
+  // short accurate description can trip it.
   "jsdoc-js/informative-docs": "warn",
   "jsdoc-js/no-blank-block-descriptions": "error",
   // Prose is what a block is for. A block of nothing but tags is not one.
