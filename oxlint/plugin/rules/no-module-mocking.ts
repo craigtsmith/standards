@@ -1,15 +1,40 @@
-import type { ESTree, Rule, SourceCode } from "@oxlint/plugins"
+import type { Definition, ESTree, Rule, SourceCode } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import { resolveVariable } from "./lib/ast/variables.ts"
 import { ruleDocs } from "./lib/rule-meta.ts"
 
 const moduleMockMethods = new Set(["doMock", "mock", "unstable_mockModule"])
+const frameworkGlobals = new Set(["jest", "vi"])
+// Each framework's module and the name it exports its mocking object under.
+const frameworkImports = new Map([
+  ["@jest/globals", "jest"],
+  ["vitest", "vi"],
+])
 
 function importedName(node: ESTree.Node): string | null {
   if (node.type !== "ImportSpecifier") return null
 
   return node.imported.type === "Identifier" ? node.imported.name : node.imported.value
+}
+
+function isFrameworkImport(definition: Definition): boolean {
+  if (definition.type !== "ImportBinding" || definition.parent?.type !== "ImportDeclaration") {
+    return false
+  }
+
+  return frameworkImports.get(definition.parent.source.value) === importedName(definition.node)
+}
+
+// An unresolved name, or one with no definition, counts by name alone.
+function resolvesToFramework(
+  sourceCode: SourceCode,
+  identifier: ESTree.IdentifierReference
+): boolean {
+  const variable = resolveVariable(sourceCode, identifier)
+  if (variable === null || variable.defs.length === 0) return frameworkGlobals.has(identifier.name)
+
+  return variable.defs.some(isFrameworkImport)
 }
 
 function isTestFrameworkObject(
@@ -18,28 +43,9 @@ function isTestFrameworkObject(
 ): expression is ESTree.IdentifierReference {
   if (expression.type !== "Identifier") return false
 
-  if (
-    (expression.name === "vi" || expression.name === "jest") &&
-    sourceCode.isGlobalReference(expression)
-  ) {
-    return true
-  }
+  const global = frameworkGlobals.has(expression.name) && sourceCode.isGlobalReference(expression)
 
-  const variable = resolveVariable(sourceCode, expression)
-  if (variable === null || variable.defs.length === 0) {
-    return expression.name === "vi" || expression.name === "jest"
-  }
-
-  return variable.defs.some((definition) => {
-    if (definition.type !== "ImportBinding" || definition.parent?.type !== "ImportDeclaration") {
-      return false
-    }
-
-    const source = definition.parent.source.value
-    const name = importedName(definition.node)
-
-    return (source === "vitest" && name === "vi") || (source === "@jest/globals" && name === "jest")
-  })
+  return global || resolvesToFramework(sourceCode, expression)
 }
 
 function memberName(callee: { computed: boolean; property: ESTree.Node }): string | null {

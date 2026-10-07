@@ -95,22 +95,32 @@ function isInsideTypeParameterConstraint(node: ESTree.TSType): boolean {
   return false
 }
 
-function shouldReportType(node: ESTree.TSType, environment: TypeEnvironment): boolean {
-  if (isInsideTypeParameterConstraint(node)) return false
+function isUnsafeDictionary(node: ESTree.Node, environment: TypeEnvironment): boolean {
+  return isTypeNode(node) && classifyUnsafeDictionary(node, environment) !== null
+}
 
-  if (isPlainAliasConsumerUse(node, environment)) return false
-
-  if (classifyUnsafeDictionary(node, environment) === null) return false
-
+// An enclosing unsafe dictionary already reports, so the inner one stays quiet.
+function hasUnsafeDictionaryAncestor(node: ESTree.TSType, environment: TypeEnvironment): boolean {
   let current: ESTree.Node = node.parent
 
   while (current.type !== "Program") {
-    if (isTypeNode(current) && classifyUnsafeDictionary(current, environment) !== null) return false
+    if (isUnsafeDictionary(current, environment)) return true
 
     current = current.parent
   }
 
-  return true
+  return false
+}
+
+function shouldReportType(node: ESTree.TSType, environment: TypeEnvironment): boolean {
+  if (isInsideTypeParameterConstraint(node) || isPlainAliasConsumerUse(node, environment)) {
+    return false
+  }
+
+  return (
+    classifyUnsafeDictionary(node, environment) !== null &&
+    !hasUnsafeDictionaryAncestor(node, environment)
+  )
 }
 
 export const noUnsafeDictionaryTypeRule: Rule = defineRule({

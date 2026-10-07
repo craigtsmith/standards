@@ -57,21 +57,28 @@ function bridges(context: Context, line: number): boolean {
   return /^[ \t]*(?:\/\/[ \t]*)?\r?$/u.test(context.sourceCode.lines[line - 1] ?? "x")
 }
 
+// Two line comments join when nothing but a bridging line separates them.
+function joinsRun(context: Context, last: CommentSpan, span: CommentSpan): boolean {
+  if (!last.joinable || !span.joinable) return false
+
+  const gap = span.startLine - last.endLine
+
+  return gap === 1 || (gap === 2 && bridges(context, last.endLine + 1))
+}
+
+// Extend the last run with the span, or start a new run from it.
+function addToRuns(context: Context, runs: CommentSpan[], span: CommentSpan): void {
+  const last = runs.at(-1)
+
+  if (last !== undefined && joinsRun(context, last, span)) {
+    runs[runs.length - 1] = { ...last, end: span.end, endLine: span.endLine }
+  } else runs.push(span)
+}
+
 function commentRuns(context: Context, spans: readonly CommentSpan[]): CommentSpan[] {
   const runs: CommentSpan[] = []
 
-  for (const span of spans) {
-    const last = runs.at(-1)
-    const gap = last === undefined ? 0 : span.startLine - last.endLine
-    const joins =
-      last !== undefined &&
-      last.joinable &&
-      span.joinable &&
-      (gap === 1 || (gap === 2 && bridges(context, last.endLine + 1)))
-
-    if (joins) runs[runs.length - 1] = { ...last, end: span.end, endLine: span.endLine }
-    else runs.push(span)
-  }
+  for (const span of spans) addToRuns(context, runs, span)
 
   return runs
 }

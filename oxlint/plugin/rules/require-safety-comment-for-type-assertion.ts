@@ -29,17 +29,23 @@ function markerPattern(markers: readonly string[]): RegExp {
 
 // An exported statement's comment sits before the export, so the walk up has to
 // check the `ExportNamedDeclaration` parent as well.
+function isJustifiedExport(
+  node: ESTree.Node,
+  parent: ESTree.Node,
+  justified: (owner: ESTree.Node) => boolean
+): boolean {
+  return (
+    parent.type === "ExportNamedDeclaration" && parent.declaration === node && justified(parent)
+  )
+}
+
 function hasSafetyComment(node: ESTree.Node, justified: (owner: ESTree.Node) => boolean): boolean {
   if (justified(node)) return true
 
   const parent = node.parent
   if (parent === null) return false
 
-  if (commentOwnerKinds.has(node.type)) {
-    return (
-      parent.type === "ExportNamedDeclaration" && parent.declaration === node && justified(parent)
-    )
-  }
+  if (commentOwnerKinds.has(node.type)) return isJustifiedExport(node, parent, justified)
 
   return parent.type !== "Program" && hasSafetyComment(parent, justified)
 }

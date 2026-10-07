@@ -27,10 +27,10 @@ interface WidenedBinding {
 }
 
 function broadBindingKind(
-  declaredType: ESTree.TSType | null,
+  declaredType: ESTree.TSType | undefined,
   assertion: TypeAssertion | null
 ): BroadTypeKind | null {
-  const declaredKind = declaredType === null ? null : broadTypeKind(declaredType)
+  const declaredKind = declaredType === undefined ? null : broadTypeKind(declaredType)
 
   return declaredKind ?? (assertion === null ? null : broadTypeKind(assertion.typeAnnotation))
 }
@@ -51,10 +51,7 @@ function widenedBinding(variable: Variable, sourceCode: SourceCode): WidenedBind
   }
 
   const assertion = assertionFromExpression(declarator.init)
-  const broadKind = broadBindingKind(
-    declarator.id.typeAnnotation?.typeAnnotation ?? null,
-    assertion
-  )
+  const broadKind = broadBindingKind(declarator.id.typeAnnotation?.typeAnnotation, assertion)
   if (broadKind === null) return null
 
   const boundary = functionBoundary(declarator)

@@ -14,6 +14,14 @@ function isPromiseReference(type: ESTree.TSType): type is ESTree.TSTypeReference
   )
 }
 
+const isPromiseOfUnknown: ResolvedTypeMatcher = (resolved, matches) => {
+  if (!isPromiseReference(resolved)) return false
+
+  const value = resolved.typeArguments?.params[0]
+
+  return value !== undefined && matches(value)
+}
+
 const isUnknownKeyword: ResolvedTypeMatcher = (resolved, matches) => {
   if (resolved.type === "TSUnknownKeyword") return true
 
@@ -21,11 +29,7 @@ const isUnknownKeyword: ResolvedTypeMatcher = (resolved, matches) => {
 
   if (resolved.type === "TSUnionType") return resolved.types.some(matches)
 
-  if (!isPromiseReference(resolved)) return false
-
-  const value = resolved.typeArguments?.params[0]
-
-  return value !== undefined && matches(value)
+  return isPromiseOfUnknown(resolved, matches)
 }
 
 function resolvesToUnknown(type: ESTree.TSType, environment: TypeEnvironment | null): boolean {
