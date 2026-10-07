@@ -1,18 +1,74 @@
-# standards
+# @craigts.dev/standards
 
-oxlint, oxfmt, fallow and tsconfig presets for craigts.dev projects. Not published; consumed as a git dependency.
+oxlint, oxfmt, fallow and tsconfig presets for craigts.dev projects, plus the `standards` oxlint JS plugin.
 
-```yaml
-# pnpm-workspace.yaml. Both lines name the same commit; bump both together.
-catalog:
-  "@craigts.dev/standards": "github:craigtsmith/standards#<commit>"
-onlyBuiltDependencies:
-  - "@craigts.dev/standards@git+ssh://git@github.com/craigtsmith/standards.git#<commit>"
+## Requirements
+
+- Node 22.14 or later.
+- TypeScript 6.0 or later. See `tsconfig/README.md` for why.
+
+## Install
+
+```sh
+pnpm add -D @craigts.dev/standards oxlint @oxlint/plugins oxlint-tsgolint oxfmt
 ```
 
-Each package then declares `"@craigts.dev/standards": "catalog:"`. The allow-list key must carry the commit: pnpm 10 approves a git artifact's build scripts only by its commit-qualified key, never by name.
+`oxlint`, `@oxlint/plugins`, `oxlint-tsgolint` and `oxfmt` are peer dependencies. The plugin rules run inside your oxlint. The preset turns on type-aware linting, which oxlint delegates to `oxlint-tsgolint`. `fallow` is an optional peer; add it if you use the fallow preset.
 
-`exports` points at `dist/`, which `pnpm build` (tsc, `tsconfig.build.json`) emits and `prepare` runs on install. Node will not type-strip `.ts` under `node_modules`, and oxlint and oxfmt load their config through Node, so the package has to ship JavaScript. `oxlint`, `@oxlint/plugins`, `oxlint-tsgolint` and `oxfmt` are peer dependencies: the plugin rules run inside the consumer's oxlint, and the preset switches on type-aware linting, which oxlint delegates to `oxlint-tsgolint`.
+## oxlint
+
+```ts
+// oxlint.config.ts
+import { defineConfig } from "@craigts.dev/standards/oxlint"
+
+export default defineConfig()
+```
+
+`defineConfig` takes your additions and merges them over the base. See [`oxlint/README.md`](oxlint/README.md) for the layout and merge rules, and [`docs/rules/README.md`](docs/rules/README.md) for the `standards` plugin rules.
+
+## oxfmt
+
+```ts
+// oxfmt.config.ts
+import { defineConfig } from "@craigts.dev/standards/oxfmt"
+
+export default defineConfig()
+```
+
+`defineConfig` takes any oxfmt option. Your `ignorePatterns` and `overrides` are appended to the base lists. It also accepts `sortTailwindcss`, which sorts Tailwind classes and defaults `functions` to `["cn", "cva"]`:
+
+```ts
+export default defineConfig({ sortTailwindcss: { stylesheet: "./src/styles.css" } })
+```
+
+## fallow
+
+In `.fallowrc.json`:
+
+```json
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "extends": ["npm:@craigts.dev/standards/fallow.jsonc"]
+}
+```
+
+## tsconfig
+
+In `tsconfig.json`:
+
+```json
+{
+  "extends": [
+    "@craigts.dev/standards/tsconfig/base.json",
+    "@craigts.dev/standards/tsconfig/node.json"
+  ],
+  "include": ["src"]
+}
+```
+
+The presets are composable. [`tsconfig/README.md`](tsconfig/README.md) lists each file, the order to extend them in, and worked examples.
+
+## Exports
 
 | Export                                   | Use                                                           |
 | ---------------------------------------- | ------------------------------------------------------------- |
@@ -22,4 +78,14 @@ Each package then declares `"@craigts.dev/standards": "catalog:"`. The allow-lis
 | `@craigts.dev/standards/fallow.jsonc`    | `"extends": ["npm:@craigts.dev/standards/fallow.jsonc"]`      |
 | `@craigts.dev/standards/tsconfig/*.json` | composable tsconfig presets; see `tsconfig/README.md`         |
 
-This repo consumes its own presets through the same specifiers, so a change is checked here before any consumer updates.
+`exports` point at JavaScript in `dist/`. oxlint and oxfmt load their config through Node, and Node will not type-strip `.ts` under `node_modules`.
+
+## Development
+
+This repo consumes its own presets through the same specifiers, so a change is checked here before any consumer updates. Those specifiers resolve to `dist/`, so `pnpm lint` builds first. `pnpm format` and `pnpm typecheck` need a build to exist.
+
+Releases are cut by release-please and staged on npm for approval. See [`RELEASING.md`](RELEASING.md).
+
+## Licence
+
+MIT
