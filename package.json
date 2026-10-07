@@ -1,6 +1,6 @@
 {
   "name": "@craigts.dev/standards",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "oxlint, oxfmt, fallow and tsconfig presets for craigts.dev projects.",
   "keywords": [
     "fallow",
