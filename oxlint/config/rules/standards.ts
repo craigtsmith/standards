@@ -27,7 +27,6 @@ const moduleSurface = {
 // Choices that are arbitrary alone and only pay off by being fixed.
 const houseStyle = {
   "standards/max-comment-lines": "error",
-  "standards/no-shape-in-symbol-names": "error",
 } satisfies Rules
 
 // Tests that do not run, or do not mean what they say.

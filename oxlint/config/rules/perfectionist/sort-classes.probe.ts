@@ -1,4 +1,4 @@
-/* oxlint-disable eslint/class-methods-use-this, eslint/no-unused-private-class-members, standards/no-unknown-parameters, standards/no-unsafe-dictionary-type, standards/no-shape-in-symbol-names, eslint/max-lines -- a probe; only sort-classes matters here */
+/* oxlint-disable eslint/class-methods-use-this, eslint/no-unused-private-class-members, standards/no-unknown-parameters, standards/no-unsafe-dictionary-type, eslint/max-lines -- a probe; only sort-classes matters here */
 
 type Fn = () => void
 type Reader = (key: string) => string | undefined
