@@ -41,6 +41,8 @@ export default defineConfig()
 export default defineConfig({ sortTailwindcss: { stylesheet: "./src/styles.css" } })
 ```
 
+See [`oxfmt/README.md`](oxfmt/README.md) for each base option and the merge rules.
+
 ## fallow
 
 In `.fallowrc.json`:
@@ -48,9 +50,11 @@ In `.fallowrc.json`:
 ```json
 {
   "$schema": "./node_modules/fallow/schema.json",
-  "extends": ["npm:@craigts.dev/standards/fallow.jsonc"]
+  "extends": ["npm:@craigts.dev/standards/fallow/preset.jsonc"]
 }
 ```
+
+fallow resolves an `npm:` subpath as a file inside the package, so the specifier names the file. [`fallow/README.md`](fallow/README.md) lists the rules and thresholds the preset sets and how to override them.
 
 ## tsconfig
 
@@ -70,15 +74,15 @@ The presets are composable. [`tsconfig/README.md`](tsconfig/README.md) lists eac
 
 ## Exports
 
-| Export                                   | Use                                                           |
-| ---------------------------------------- | ------------------------------------------------------------- |
-| `@craigts.dev/standards/oxlint`          | `defineConfig` for `oxlint.config.ts`; see `oxlint/README.md` |
-| `@craigts.dev/standards/oxlint/plugin`   | the `standards` JS plugin, loaded by the preset               |
-| `@craigts.dev/standards/oxfmt`           | `defineConfig` for `oxfmt.config.ts`                          |
-| `@craigts.dev/standards/fallow.jsonc`    | `"extends": ["npm:@craigts.dev/standards/fallow.jsonc"]`      |
-| `@craigts.dev/standards/tsconfig/*.json` | composable tsconfig presets; see `tsconfig/README.md`         |
+| Export                                       | Use                                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `@craigts.dev/standards/oxlint`              | `defineConfig` for `oxlint.config.ts`; see `oxlint/README.md`                           |
+| `@craigts.dev/standards/oxlint/plugin`       | the `standards` JS plugin, loaded by the preset                                         |
+| `@craigts.dev/standards/oxfmt`               | `defineConfig` for `oxfmt.config.ts`; see `oxfmt/README.md`                             |
+| `@craigts.dev/standards/fallow/preset.jsonc` | `"extends": ["npm:@craigts.dev/standards/fallow/preset.jsonc"]`; see `fallow/README.md` |
+| `@craigts.dev/standards/tsconfig/*.json`     | composable tsconfig presets; see `tsconfig/README.md`                                   |
 
-`exports` point at JavaScript in `dist/`. oxlint and oxfmt load their config through Node, and Node will not type-strip `.ts` under `node_modules`.
+The JavaScript `exports` point at `dist/`. oxlint and oxfmt load their config through Node, and Node will not type-strip `.ts` under `node_modules`.
 
 ## Development
 

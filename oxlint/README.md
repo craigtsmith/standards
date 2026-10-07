@@ -15,7 +15,8 @@ export default defineConfig()
 - `config/rules/shared.ts` — the `Rule` and `Rules` types and the `testFiles` globs the base and the plugin files share.
 - `config/rules/jsdoc-js.ts` — the doc rules oxlint's native `jsdoc` port does not carry, from `eslint-plugin-jsdoc` under the alias `jsdoc-js`; oxlint reserves the `jsdoc` prefix. The port runs in Rust and is an order faster, so everything it carries stays in `jsdoc.ts` and nothing appears in both files.
 - `config/rules/perfectionist/<rule>.ts` — the four option objects too long to read inline. `sort-classes.ts` and `sort-modules.ts` each sit beside a `.probe.ts` file that exercises them.
-- `plugin/` — the `standards` JS plugin: one `plugin/rules/<rule>.ts` per rule, with its test beside it, and helpers the rules share in `plugin/rules/lib/`.
+- `plugin/` — the `standards` JS plugin: one `plugin/rules/<rule>.ts` per rule, with its test beside it.
+- `plugin/rules/lib/` — helpers the rules share. `ast/` reads syntax, `types/` resolves type annotations and aliases, `widening/` follows known values through declarations, assignments, calls and returns for `no-known-value-widening` and `no-widen-then-assert`. `rule-meta.ts` builds each rule's `meta.docs` and reads its options. `.fallowrc.jsonc` declares these folders as boundary zones: `ast/` imports from no other zone, `types/` from `ast/`, `widening/` from both.
 
 Each `standards` rule is documented in [`docs/rules/`](../docs/rules/README.md).
 
@@ -62,8 +63,8 @@ oxlint's `extends` merges `rules`, `overrides` and `plugins`, and replaces `env`
 
 ## Tests
 
-`pnpm test` runs vitest over `plugin/rules/*.test.ts`. Each rule has one test file beside it, driven by `RuleTester` from `oxlint/plugins-dev`, which lints in-process through oxlint's own bindings. `plugin/rules/rule-tester.ts` binds the tester to vitest and exports `ruleTester`, which parses as `ts`. Columns in an expected error are zero-based. An `errors` entry with `data` must name every placeholder the message uses.
+`pnpm test` runs vitest over the `*.test.ts` files under `oxlint/`. Each rule has one test file beside it, driven by `RuleTester` from `oxlint/plugins-dev`, which lints in-process through oxlint's own bindings. `plugin/rules/rule-tester.ts` binds the tester to vitest and exports `ruleTester`, which parses as `ts`. Columns in an expected error are zero-based. An `errors` entry with `data` must name every placeholder the message uses.
 
 ## Probes
 
-`config/rules/perfectionist/*.probe.ts` are linted like any other file. Reorder members in one and `pnpm lint` should report it. They import nothing and nothing imports them, so fallow lists them as unused files. That is expected.
+`config/rules/perfectionist/*.probe.ts` are linted like any other file. Reorder members in one and `pnpm lint` should report it. They import nothing and nothing imports them, so `.fallowrc.jsonc` lists them as entry points to keep fallow from reporting them as unused files.

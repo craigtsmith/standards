@@ -22,7 +22,7 @@
   },
   "files": [
     "dist",
-    "fallow.jsonc",
+    "fallow",
     "tsconfig"
   ],
   "type": "module",
@@ -39,7 +39,7 @@
       "types": "./dist/oxfmt/index.d.ts",
       "default": "./dist/oxfmt/index.js"
     },
-    "./fallow.jsonc": "./fallow.jsonc",
+    "./fallow/preset.jsonc": "./fallow/preset.jsonc",
     "./tsconfig/*.json": "./tsconfig/*.json"
   },
   "publishConfig": {

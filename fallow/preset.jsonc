@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/fallow/schema.json",
+  "$schema": "../node_modules/fallow/schema.json",
   "rules": {
     "unused-dependencies": "error",
     "unused-dev-dependencies": "error",
@@ -14,17 +14,10 @@
     "require-suppression-reason": "error",
     "stale-suppressions": "error"
   },
-  // Oxlint config loads through import.meta.resolve
-  "ignoreDependencies": [
-    "eslint-plugin-jsdoc",
-    "eslint-plugin-perfectionist",
-    "eslint-plugin-sonarjs"
-  ],
   "boundaries": { "coverage": { "requireAllFiles": true } },
   "health": {
     "maxCyclomatic": 10,
     "maxCognitive": 4,
     "maxUnitSize": 40
-  },
-  "audit": { "healthBaseline": "fallow-health-baseline.json" }
+  }
 }
