@@ -63,12 +63,9 @@ export function knownValueEvidence(
 
   if (SHAPED_VALUES.has(unwrapped.type)) return { type: null }
 
-  if (unwrapped.type !== "Identifier") return null
-
-  const variable = resolveVariable(flow.sourceCode, unwrapped)
-  if (variable === null || visitedVariables.has(variable)) return null
-
-  return variableEvidence(variable, flow, visitedVariables)
+  return unwrapped.type === "Identifier"
+    ? identifierEvidence(unwrapped, flow, visitedVariables)
+    : null
 }
 
 function assertionEvidence(type: ESTree.TSType): KnownValueEvidence | null {
@@ -83,6 +80,18 @@ function annotationEvidence(
   return functionBoundary(identifier) !== boundary || broadTypeKind(annotation) !== null
     ? null
     : { type: annotation }
+}
+
+function identifierEvidence(
+  identifier: ESTree.IdentifierReference,
+  flow: ValueFlow,
+  visitedVariables: ReadonlySet<Variable>
+): KnownValueEvidence | null {
+  const variable = resolveVariable(flow.sourceCode, identifier)
+
+  return variable === null || visitedVariables.has(variable)
+    ? null
+    : variableEvidence(variable, flow, visitedVariables)
 }
 
 function variableEvidence(

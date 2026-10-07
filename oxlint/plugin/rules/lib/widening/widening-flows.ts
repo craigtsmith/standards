@@ -1,4 +1,4 @@
-import type { Context, ESTree } from "@oxlint/plugins"
+import type { Context, ESTree, SourceCode } from "@oxlint/plugins"
 
 import type { WideningTarget } from "../types/dictionary-values.ts"
 import type { TypeEnvironment } from "../types/type-environment.ts"
@@ -47,28 +47,15 @@ export function propertyFlow(
 export function assignmentFlow(flow: Flow, node: ESTree.AssignmentExpression): void {
   if (node.operator !== "=" || node.left.type !== "Identifier") return
 
-  const variable = resolveVariable(flow.context.sourceCode, node.left)
-  const declarator = variable === null ? null : variableDeclarator(variable)
-  if (declarator === null || declarator.id.type !== "Identifier") return
-
-  reportFlow(flow, {
-    destination: annotationTarget(flow, declarator.id.typeAnnotation?.typeAnnotation),
-    expression: node.right,
-    subject: `binding \`${declarator.id.name}\``,
-  })
+  const declarator = assignedDeclarator(flow.context.sourceCode, node.left)
+  if (declarator !== null) bindingFlow(flow, declarator.id, node.right)
 }
 
 /**
  * Reports a variable declarator whose initialiser has a known shape but whose annotation widens it.
  */
 export function declaratorFlow(flow: Flow, node: ESTree.VariableDeclarator): void {
-  if (node.init === null || node.id.type !== "Identifier") return
-
-  reportFlow(flow, {
-    destination: annotationTarget(flow, node.id.typeAnnotation?.typeAnnotation),
-    expression: node.init,
-    subject: `binding \`${node.id.name}\``,
-  })
+  if (node.init !== null) bindingFlow(flow, node.id, node.init)
 }
 
 /**
@@ -102,6 +89,30 @@ export function assertionFlow(flow: Flow, node: TypeAssertion): void {
 
 function isDictionaryAccumulatorTarget(destination: WideningTarget): boolean {
   return destination.kind === "open dictionary" || destination.kind === "generic container"
+}
+
+function assignedDeclarator(
+  sourceCode: SourceCode,
+  identifier: ESTree.IdentifierReference
+): ESTree.VariableDeclarator | null {
+  const variable = resolveVariable(sourceCode, identifier)
+
+  return variable === null ? null : variableDeclarator(variable)
+}
+
+// Only a plain identifier binding carries an annotation that can widen the value.
+function bindingFlow(
+  flow: Flow,
+  binding: ESTree.BindingPattern,
+  expression: ESTree.Expression
+): void {
+  if (binding.type !== "Identifier") return
+
+  reportFlow(flow, {
+    destination: annotationTarget(flow, binding.typeAnnotation?.typeAnnotation),
+    expression,
+    subject: `binding \`${binding.name}\``,
+  })
 }
 
 function hasParentAssertion(node: ESTree.Node): boolean {

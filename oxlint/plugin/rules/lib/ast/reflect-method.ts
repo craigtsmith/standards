@@ -10,15 +10,24 @@ export function isGlobalReflectMethodCall(
   callee: ESTree.Expression,
   methodName: string
 ): boolean {
-  if (!("property" in callee) || !("object" in callee) || !("computed" in callee)) return false
+  if (callee.type !== "MemberExpression") return false
 
-  if (!isGlobalReflect(sourceCode, callee.object)) return false
+  return isGlobalReflect(sourceCode, callee.object) && isPropertyNamed(callee, methodName)
+}
 
-  const property = callee.property
+// A computed key must be the string literal itself; a dotted key is an identifier.
+function isPropertyNamed(member: ESTree.MemberExpression, name: string): boolean {
+  return member.computed
+    ? isLiteralOf(member.property, name)
+    : isIdentifierNamed(member.property, name)
+}
 
-  return callee.computed
-    ? property.type === "Literal" && property.value === methodName
-    : property.type === "Identifier" && property.name === methodName
+function isLiteralOf(node: ESTree.Node, value: string): boolean {
+  return node.type === "Literal" && node.value === value
+}
+
+function isIdentifierNamed(node: ESTree.Node, name: string): boolean {
+  return node.type === "Identifier" && node.name === name
 }
 
 function isGlobalReflect(sourceCode: SourceCode, expression: ESTree.Expression): boolean {

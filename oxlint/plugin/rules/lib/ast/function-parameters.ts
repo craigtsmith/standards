@@ -20,19 +20,11 @@ export function containsUnknownType(type: ESTree.TSType): boolean {
 export function functionParameterTypeAnnotation(
   parameter: FunctionParameter
 ): ESTree.TSTypeAnnotation | null {
-  if (parameter.type === "TSParameterProperty") {
-    return functionParameterTypeAnnotation(parameter.parameter)
-  }
+  const annotation = ownTypeAnnotation(parameter)
+  const inner = innerParameter(parameter)
+  if (annotation !== null || inner === null) return annotation
 
-  if (parameter.type === "RestElement") {
-    return parameter.typeAnnotation ?? functionParameterTypeAnnotation(parameter.argument)
-  }
-
-  if (parameter.type === "AssignmentPattern") {
-    return parameter.typeAnnotation ?? functionParameterTypeAnnotation(parameter.left)
-  }
-
-  return parameter.typeAnnotation ?? null
+  return functionParameterTypeAnnotation(inner)
 }
 
 /**
@@ -43,24 +35,33 @@ export function functionParameterBindingName(
   parameter: FunctionParameter,
   sourceCode: SourceCode
 ): string {
-  if (parameter.type === "TSParameterProperty") {
-    return functionParameterBindingName(parameter.parameter, sourceCode)
-  }
-
-  if (parameter.type === "AssignmentPattern") {
-    return functionParameterBindingName(parameter.left, sourceCode)
-  }
-
-  if (parameter.type === "RestElement") {
-    return functionParameterBindingName(parameter.argument, sourceCode)
-  }
+  const inner = innerParameter(parameter)
+  if (inner !== null) return functionParameterBindingName(inner, sourceCode)
 
   if (parameter.type === "Identifier") return parameter.name
 
-  const sourceText = sourceCode.getText(parameter)
-  const annotationStart = parameter.typeAnnotation?.start
+  return patternText(parameter, sourceCode)
+}
+
+// Parameter properties, rest elements and defaults wrap the binding they declare.
+function innerParameter(parameter: FunctionParameter): FunctionParameter | null {
+  if (parameter.type === "TSParameterProperty") return parameter.parameter
+
+  if (parameter.type === "RestElement") return parameter.argument
+
+  return parameter.type === "AssignmentPattern" ? parameter.left : null
+}
+
+// A parameter property's annotation belongs to the parameter it wraps.
+function ownTypeAnnotation(parameter: FunctionParameter): ESTree.TSTypeAnnotation | null {
+  return parameter.type === "TSParameterProperty" ? null : (parameter.typeAnnotation ?? null)
+}
+
+function patternText(pattern: FunctionParameter, sourceCode: SourceCode): string {
+  const sourceText = sourceCode.getText(pattern)
+  const annotationStart = ownTypeAnnotation(pattern)?.start
 
   return annotationStart === undefined
     ? sourceText
-    : sourceText.slice(0, annotationStart - parameter.start).trimEnd()
+    : sourceText.slice(0, annotationStart - pattern.start).trimEnd()
 }

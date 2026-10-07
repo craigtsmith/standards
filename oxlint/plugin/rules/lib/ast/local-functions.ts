@@ -17,6 +17,8 @@ export interface PredicateCall {
 
 export type FunctionExpression = ESTree.ArrowFunctionExpression | ESTree.Function
 
+const ANONYMOUS_FUNCTION = "anonymous function"
+
 /**
  * Whether a node is any function form, bodiless declarations included.
  */
@@ -57,16 +59,11 @@ export function predicateCall(
   node: ESTree.CallExpression
 ): PredicateCall | null {
   const owner = localFunctionForCall(sourceCode, node.callee)
-  const index = owner === null ? null : typePredicateSubjectIndex(sourceCode, owner)
-  if (owner === null || index === null) return null
+  if (owner === null) return null
 
-  const parameter = owner.params[index]
-  const argument = node.arguments[index]
-  if (parameter === undefined || argument === undefined || argument.type === "SpreadElement") {
-    return null
-  }
+  const index = typePredicateSubjectIndex(sourceCode, owner)
 
-  return { argument, owner, parameter }
+  return index === null ? null : pairedArgument(owner, node, index)
 }
 
 /**
@@ -114,18 +111,17 @@ export function sourceKeyName(sourceCode: SourceCode, key: ESTree.PropertyKey): 
  * A function's name for a message, falling back to the variable or method it is assigned to.
  */
 export function functionName(sourceCode: SourceCode, owner: FunctionExpression | null): string {
-  if (owner === null) return "anonymous function"
+  if (owner === null) return ANONYMOUS_FUNCTION
 
-  if (owner.id !== null) return owner.id.name
+  return owner.id?.name ?? assignedName(sourceCode, owner.parent) ?? ANONYMOUS_FUNCTION
+}
 
-  const parent = owner.parent
-  if (parent.type === "VariableDeclarator" && parent.id.type === "Identifier") {
-    return parent.id.name
-  }
-
+function assignedName(sourceCode: SourceCode, parent: ESTree.Node): string | null {
   if (parent.type === "MethodDefinition") return sourceKeyName(sourceCode, parent.key)
 
-  return "anonymous function"
+  return parent.type === "VariableDeclarator" && parent.id.type === "Identifier"
+    ? parent.id.name
+    : null
 }
 
 function typePredicateSubjectIndex(
@@ -145,20 +141,31 @@ function typePredicateSubjectIndex(
   return index === -1 ? null : index
 }
 
-function definedFunction(definition: Definition): FunctionExpression | null {
-  if (definition.type === "FunctionName") {
-    return isFunctionExpression(definition.node) ? definition.node : null
-  }
-
-  if (
-    definition.type !== "Variable" ||
-    definition.node.type !== "VariableDeclarator" ||
-    definition.node.init === null
-  ) {
+function pairedArgument(
+  owner: FunctionExpression,
+  node: ESTree.CallExpression,
+  index: number
+): PredicateCall | null {
+  const parameter = owner.params[index]
+  const argument = node.arguments[index]
+  if (parameter === undefined || argument === undefined || argument.type === "SpreadElement") {
     return null
   }
 
-  const initializer = unwrapExpression(definition.node.init)
+  return { argument, owner, parameter }
+}
 
-  return isFunctionExpression(initializer) ? initializer : null
+function definedFunction(definition: Definition): FunctionExpression | null {
+  const value =
+    definition.type === "FunctionName" ? definition.node : unwrappedInitializer(definition)
+
+  return value !== null && isFunctionExpression(value) ? value : null
+}
+
+function unwrappedInitializer(definition: Definition): ESTree.Expression | null {
+  if (definition.type !== "Variable" || definition.node.type !== "VariableDeclarator") return null
+
+  const initializer = definition.node.init
+
+  return initializer === null ? null : unwrapExpression(initializer)
 }

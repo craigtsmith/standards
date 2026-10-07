@@ -1,13 +1,19 @@
 import type { ESTree, SourceCode, Variable } from "@oxlint/plugins"
 
 import type { TypeEnvironment } from "../types/type-environment.ts"
+import { isTypeAssertion } from "../ast/assertions.ts"
 import { unwrapExpression } from "../ast/expressions.ts"
 import {
   functionParameterBindingName,
   functionParameterTypeAnnotation,
 } from "../ast/function-parameters.ts"
 import { isFunctionExpression, localFunctionForCall } from "../ast/local-functions.ts"
-import { resolveVariable, singleDefinition, stableConstDeclarator } from "../ast/variables.ts"
+import {
+  resolveVariable,
+  singleDefinition,
+  stableConstDeclarator,
+  variableDeclarator,
+} from "../ast/variables.ts"
 import { classifyUnsafeDictionaryValue } from "../types/dictionary-types.ts"
 import { isKnownValueExpression } from "./syntactic-values.ts"
 
@@ -27,18 +33,10 @@ export function hasKnownEvidence(
 ): boolean {
   if (isKnownValueExpression(expression)) return true
 
-  const unwrapped = unwrapExpression(expression)
-  if (unwrapped.type !== "Identifier") return false
+  const variable = unvisitedVariable(sourceCode, unwrapExpression(expression), visitedVariables)
+  const initializer = followedInitializer(variable, visitedVariables)
 
-  const variable = resolveVariable(sourceCode, unwrapped)
-  if (variable === null || visitedVariables.has(variable)) return false
-
-  const initializer = stableConstDeclarator(variable)?.init ?? null
-  if (initializer === null) return false
-
-  visitedVariables.add(variable)
-
-  return hasKnownEvidence(sourceCode, initializer, visitedVariables)
+  return initializer !== null && hasKnownEvidence(sourceCode, initializer, visitedVariables)
 }
 
 /**
@@ -52,18 +50,19 @@ export function hasKnownCallArgumentEvidence(
   visitedVariables: Set<Variable> = new Set()
 ): boolean {
   const unwrapped = unwrapToAssertion(expression)
-  if (unwrapped.type === "TSAsExpression" || unwrapped.type === "TSTypeAssertion") {
+  if (isTypeAssertion(unwrapped)) {
     return hasInformativeType(unwrapped.typeAnnotation, lookup.environment)
   }
 
   if (unwrapped.type === "CallExpression") return hasInformativeReturn(lookup, unwrapped)
 
-  if (unwrapped.type !== "Identifier") return isKnownValueExpression(unwrapped)
-
-  const variable = resolveVariable(lookup.sourceCode, unwrapped)
-  if (variable === null || visitedVariables.has(variable)) return false
-
-  return hasKnownVariableEvidence(lookup, variable, visitedVariables)
+  return unwrapped.type === "Identifier"
+    ? hasKnownVariableEvidence(
+        lookup,
+        unvisitedVariable(lookup.sourceCode, unwrapped, visitedVariables),
+        visitedVariables
+      )
+    : isKnownValueExpression(unwrapped)
 }
 
 // The walk stops at an assertion because that replaces the type, while the
@@ -82,19 +81,47 @@ function unwrapToAssertion(expression: ESTree.Expression): ESTree.Expression {
   return current
 }
 
+// The variable an identifier names, or null when it names none or the walk has been there.
+function unvisitedVariable(
+  sourceCode: SourceCode,
+  expression: ESTree.Expression,
+  visitedVariables: ReadonlySet<Variable>
+): Variable | null {
+  if (expression.type !== "Identifier") return null
+
+  const variable = resolveVariable(sourceCode, expression)
+
+  return variable === null || visitedVariables.has(variable) ? null : variable
+}
+
+// A stable `const` initialiser to follow, marking its variable visited so a cycle ends.
+function followedInitializer(
+  variable: Variable | null,
+  visitedVariables: Set<Variable>
+): ESTree.Expression | null {
+  if (variable === null) return null
+
+  const initializer = stableConstDeclarator(variable)?.init ?? null
+  if (initializer !== null) visitedVariables.add(variable)
+
+  return initializer
+}
+
 function variableTypeAnnotation(
   sourceCode: SourceCode,
   variable: Variable
 ): ESTree.TSTypeAnnotation | null {
-  const definition = singleDefinition(variable)
-  if (
-    definition?.type === "Variable" &&
-    definition.node.type === "VariableDeclarator" &&
-    definition.node.id.type === "Identifier"
-  ) {
-    return definition.node.id.typeAnnotation ?? null
-  }
+  const declarator = variableDeclarator(variable)
+  if (declarator === null) return parameterTypeAnnotation(sourceCode, variable)
 
+  return declarator.id.type === "Identifier" ? (declarator.id.typeAnnotation ?? null) : null
+}
+
+function parameterTypeAnnotation(
+  sourceCode: SourceCode,
+  variable: Variable
+): ESTree.TSTypeAnnotation | null {
+  const definition = singleDefinition(variable)
   if (definition?.type !== "Parameter" || !isFunctionExpression(definition.node)) return null
 
   const parameter = definition.node.params.find(
@@ -117,16 +144,15 @@ function hasInformativeReturn(lookup: EvidenceLookup, call: ESTree.CallExpressio
 
 function hasKnownVariableEvidence(
   lookup: EvidenceLookup,
-  variable: Variable,
+  variable: Variable | null,
   visitedVariables: Set<Variable>
 ): boolean {
+  if (variable === null) return false
+
   const annotation = variableTypeAnnotation(lookup.sourceCode, variable)
   if (annotation !== null) return hasInformativeType(annotation.typeAnnotation, lookup.environment)
 
-  const initializer = stableConstDeclarator(variable)?.init ?? null
-  if (initializer === null) return false
+  const initializer = followedInitializer(variable, visitedVariables)
 
-  visitedVariables.add(variable)
-
-  return hasKnownCallArgumentEvidence(lookup, initializer, visitedVariables)
+  return initializer !== null && hasKnownCallArgumentEvidence(lookup, initializer, visitedVariables)
 }
