@@ -3,13 +3,7 @@ import type { ESTree, SourceCode } from "@oxlint/plugins"
 import { resolveVariable } from "./variables.ts"
 
 /**
- * Reports whether a callee is `Reflect.<method>` on the global `Reflect`, written with dot or
- * bracket access.
- *
- * @param sourceCode - The source code used to check that `Reflect` is not shadowed.
- * @param callee - The call's callee expression.
- * @param methodName - The Reflect method to match.
- * @returns Whether the callee is that method on the global `Reflect`.
+ * Whether a callee is `Reflect.<methodName>` on an unshadowed `Reflect`, by dot or bracket.
  */
 export function isGlobalReflectMethodCall(
   sourceCode: SourceCode,

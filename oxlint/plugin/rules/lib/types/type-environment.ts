@@ -9,12 +9,7 @@ export interface TypeEnvironment {
 }
 
 /**
- * Builds the type environment for a file: its top-level interface declarations by name, and the
- * cached type alias environment.
- *
- * @param program - The file's root node.
- * @param visitorKeys - The child keys used to walk the tree.
- * @returns The interfaces and alias environment used to resolve references.
+ * A file's top-level interfaces by name, and its cached type alias environment.
  */
 export function createTypeEnvironment(
   program: ESTree.Program,

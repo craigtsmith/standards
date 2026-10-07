@@ -1,25 +1,21 @@
 import { defineRule, type Rule } from "@oxlint/plugins"
 
 import { isGlobalReflectMethodCall } from "./lib/ast/reflect-method.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
 
 export const noReflectGetRule: Rule = defineRule({
   meta: {
+    docs: ruleDocs("no-reflect-get", "Disallow `Reflect.get`."),
     type: "problem",
-    docs: {
-      description:
-        "Disallow Reflect.get; use typed property access or parse dynamic input into a domain type.",
-    },
     messages: {
       reflectGet:
-        "Replace `Reflect.get` with typed property access. Parse dynamic input into a named domain type before reading it.",
+        "`Reflect.get` can return `any`, which turns off type checking. Use property access.",
     },
   },
 
   createOnce(context) {
     return {
       CallExpression(node) {
-        if (node.callee.type === "Super" || node.callee.type === "V8IntrinsicExpression") return
-
         if (isGlobalReflectMethodCall(context.sourceCode, node.callee, "get")) {
           context.report({ messageId: "reflectGet", node })
         }

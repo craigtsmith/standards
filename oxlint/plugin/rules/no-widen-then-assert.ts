@@ -1,6 +1,9 @@
-import type { ESTree, Rule, Scope, Variable } from "@oxlint/plugins"
+import type { ESTree, Rule, SourceCode, Variable } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
+import type { TypeAssertion } from "./lib/ast/assertions.ts"
+import { resolveVariable, stableConstDeclarator } from "./lib/ast/variables.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
 import {
   broadTypeKind,
   isDefinitelyNarrowerRecordType,
@@ -13,8 +16,6 @@ import {
   assertionFromExpression,
   functionBoundary,
   knownValueEvidence,
-  resolvedVariableForIdentifier,
-  stableConstDeclarator,
   type KnownValueEvidence,
 } from "./lib/widening/widened-bindings.ts"
 
@@ -24,8 +25,6 @@ interface WidenedBinding {
   readonly declaredAt: number
   readonly evidence: KnownValueEvidence
 }
-
-type TypeAssertion = ESTree.TSAsExpression | ESTree.TSTypeAssertion
 
 function broadBindingKind(
   declaredType: ESTree.TSType | null,
@@ -45,7 +44,7 @@ function widenedInitializer(
     : initializer
 }
 
-function widenedBinding(variable: Variable, scopes: readonly Scope[]): WidenedBinding | null {
+function widenedBinding(variable: Variable, sourceCode: SourceCode): WidenedBinding | null {
   const declarator = stableConstDeclarator(variable)
   if (declarator === null || declarator.id.type !== "Identifier" || declarator.init === null) {
     return null
@@ -61,7 +60,7 @@ function widenedBinding(variable: Variable, scopes: readonly Scope[]): WidenedBi
   const boundary = functionBoundary(declarator)
   const evidence = knownValueEvidence(
     widenedInitializer(declarator.init, assertion),
-    { boundary, scopes },
+    { boundary, sourceCode },
     new Set([variable])
   )
 
@@ -87,25 +86,23 @@ function assertionIsNarrower(
 export const noWidenThenAssertRule: Rule = defineRule({
   meta: {
     type: "problem",
-    docs: {
-      description:
-        "Disallow local const flows that explicitly widen a known value before asserting the widened binding to a narrower type.",
-    },
+    docs: ruleDocs(
+      "no-widen-then-assert",
+      "Disallow widening a known value and then asserting it back to a narrower type."
+    ),
     messages: {
       widenThenAssert:
-        'Binding "{{name}}" discards type evidence and later recreates it with an assertion. Keep the precise type from initialization through use; parse boundary input once.',
+        'Binding "{{name}}" is widened and later asserted back to a narrower type. Keep the precise type from the start.',
     },
   },
 
   createOnce(context) {
-    let scopes: readonly Scope[] = []
-
     const checkAssertion = (node: TypeAssertion) => {
       const expression = assertedExpression(node)
       if (expression.type !== "Identifier") return
 
-      const variable = resolvedVariableForIdentifier(scopes, expression)
-      const widened = variable === null ? null : widenedBinding(variable, scopes)
+      const variable = resolveVariable(context.sourceCode, expression)
+      const widened = variable === null ? null : widenedBinding(variable, context.sourceCode)
       if (
         widened === null ||
         node.start <= widened.declaredAt ||
@@ -118,13 +115,6 @@ export const noWidenThenAssertRule: Rule = defineRule({
       context.report({ data: { name: expression.name }, messageId: "widenThenAssert", node })
     }
 
-    return {
-      TSAsExpression: checkAssertion,
-      TSTypeAssertion: checkAssertion,
-
-      Program() {
-        scopes = context.sourceCode.scopeManager.scopes
-      },
-    }
+    return { TSAsExpression: checkAssertion, TSTypeAssertion: checkAssertion }
   },
 })

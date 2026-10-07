@@ -13,11 +13,7 @@ const keywordValues: ReadonlyMap<string, UnsafeValue> = new Map([
 
 /**
  * Classifies a type as an unsafe dictionary value: `any`, `unknown`, `object`, an empty object
- * type, or a union or intersection built from those, following references through the resolution.
- *
- * @param type - The type annotation to classify.
- * @param resolution - The alias resolution used to follow type references.
- * @returns The kind of unsafe value, or null when the type is safe.
+ * type, or a union or intersection built from those. Null when the type is safe.
  */
 export function unsafeDirectValue(type: ESTree.TSType, resolution: Resolution): UnsafeValue | null {
   const unwrapped = unwrapTransparentType(type)

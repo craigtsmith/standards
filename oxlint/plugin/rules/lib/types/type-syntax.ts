@@ -7,30 +7,18 @@ export interface AliasArgument {
 }
 
 /**
- * Reads the plain identifier a type reference names.
- *
- * @returns The name, or null when the reference is a qualified name.
+ * The plain identifier a type reference names, or null for a qualified name.
  */
 export function typeReferenceName(type: ESTree.TSTypeReference): string | null {
   return type.typeName.type === "Identifier" ? type.typeName.name : null
 }
 
-/**
- * Reads one type argument of a reference by position.
- *
- * @param type - The type reference.
- * @param index - The zero-based argument position.
- * @returns The argument, or null when the reference has none at that position.
- */
 export function typeArgumentAt(type: ESTree.TSTypeReference, index: number): ESTree.TSType | null {
   return type.typeArguments?.params[index] ?? null
 }
 
 /**
- * Strips parentheses and `readonly` operators to reach the type they wrap.
- *
- * @param type - The type to unwrap.
- * @returns The innermost type not wrapped by either form.
+ * Strips parentheses and `readonly` operators.
  */
 export function unwrapTransparentType(type: ESTree.TSType): ESTree.TSType {
   let current = type
@@ -46,13 +34,8 @@ export function unwrapTransparentType(type: ESTree.TSType): ESTree.TSType {
 }
 
 /**
- * Pairs each type parameter of an alias with the argument a reference supplies for it, falling back
- * to the parameter's default.
- *
- * @param alias - The alias whose parameters are paired.
- * @param reference - The reference supplying the arguments.
- * @returns The pairs in parameter order, or null when a parameter has neither an argument nor a
- *   default.
+ * Pairs each type parameter of an alias with the argument a reference supplies, falling back to the
+ * parameter's default. Null when a parameter has neither.
  */
 export function aliasArguments(
   alias: ESTree.TSTypeAliasDeclaration,

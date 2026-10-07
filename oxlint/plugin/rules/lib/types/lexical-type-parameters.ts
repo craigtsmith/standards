@@ -3,13 +3,8 @@ import type { ESTree } from "@oxlint/plugins"
 import { forEachChild, type VisitorKeys } from "../ast/walk.ts"
 
 /**
- * Collects every type parameter name in scope at a node, walking up through enclosing declarations,
- * mapped-type keys, and `infer` bindings, since a type parameter shadows a module alias of the same
- * name.
- *
- * @param node - The node whose enclosing scopes are searched.
- * @param visitorKeys - The visitor keys used to walk `infer` positions inside conditional types.
- * @returns The set of type parameter names visible at the node.
+ * Every type parameter name in scope at a node, from enclosing declarations, mapped-type keys and
+ * `infer` bindings. A type parameter shadows a module alias of the same name.
  */
 export function lexicalTypeParameterNames(
   node: ESTree.Node,

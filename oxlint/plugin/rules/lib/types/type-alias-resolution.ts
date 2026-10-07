@@ -19,8 +19,7 @@ interface Substitution {
   readonly type: ESTree.TSType
 }
 
-// `resolving` holds the aliases already being expanded, so resolution stops at
-// a cycle.
+// `resolving` holds the aliases already being expanded, so resolution stops at a cycle.
 interface Frame {
   readonly environment: TypeAliasEnvironment
   readonly resolving: ReadonlySet<ESTree.TSTypeAliasDeclaration>
@@ -37,12 +36,7 @@ type Substitutions = ReadonlyMap<string, Substitution>
 const environmentsByProgram = new WeakMap<ESTree.Program, TypeAliasEnvironment>()
 
 /**
- * Collects the type bindings of a program, cached per program so every rule in a file shares one
- * walk.
- *
- * @param program - The file's root node.
- * @param visitorKeys - The child keys used to walk the tree.
- * @returns The bindings plus the visitor keys needed to resolve aliases later.
+ * The type bindings of a program, cached per program so every rule in a file shares one walk.
  */
 export function createTypeAliasEnvironment(
   program: ESTree.Program,
@@ -59,14 +53,8 @@ export function createTypeAliasEnvironment(
 }
 
 /**
- * Finds the single type alias a name refers to at a use site. A lexical type parameter shadows
- * every alias, and an ambiguous nearest scope yields nothing.
- *
- * @param name - The referenced name.
- * @param use - The node where the name is used.
- * @param environment - The file's type bindings and visitor keys.
- * @returns The alias declaration, or null when the name does not resolve to
- * exactly one alias.
+ * The single type alias a name refers to at a use site. A lexical type parameter shadows every
+ * alias, and an ambiguous nearest scope yields null.
  */
 export function visibleTypeAlias(
   name: string,
@@ -81,13 +69,8 @@ export function visibleTypeAlias(
 }
 
 /**
- * Reports whether a name is bound at a use site by a lexical type parameter or by any alias,
- * interface, enum, class or import in an enclosing scope.
- *
- * @param name - The referenced name.
- * @param use - The node where the name is used.
- * @param environment - The file's type bindings and visitor keys.
- * @returns Whether a local binding shadows the name.
+ * Whether a name is bound at a use site by a lexical type parameter or by an alias, interface,
+ * enum, class or import in an enclosing scope.
  */
 export function hasVisibleTypeBinding(
   name: string,
@@ -101,14 +84,8 @@ export function hasVisibleTypeBinding(
 }
 
 /**
- * Tests a type against a matcher after expanding aliases and type arguments, handing the matcher a
+ * Tests a type against a matcher after expanding aliases and type arguments. The matcher gets a
  * callback that expands and tests a child type the same way.
- *
- * @param type - The type to test.
- * @param environment - The file's type bindings and visitor keys.
- * @param matcher - Decides whether a resolved type matches, recursing through the callback where
- *   needed.
- * @returns Whether the resolved type matches.
  */
 export function resolvedTypeMatches(
   type: ESTree.TSType,

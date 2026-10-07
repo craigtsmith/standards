@@ -7,22 +7,15 @@ import {
   functionParameterTypeAnnotation,
   type FunctionParameter,
 } from "./lib/ast/function-parameters.ts"
+import { signatureVisitor, type SignatureNode } from "./lib/ast/signatures.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
 
 interface UnparsedParameter {
   readonly name: string
   readonly type: ESTree.TSType
 }
 
-type ParameterOwner =
-  | ESTree.ArrowFunctionExpression
-  | ESTree.Function
-  | ESTree.TSCallSignatureDeclaration
-  | ESTree.TSConstructSignatureDeclaration
-  | ESTree.TSConstructorType
-  | ESTree.TSFunctionType
-  | ESTree.TSMethodSignature
-
-function isTypePredicateSubject(owner: ParameterOwner, parameterName: string): boolean {
+function isTypePredicateSubject(owner: SignatureNode, parameterName: string): boolean {
   const predicate = owner.returnType?.typeAnnotation
 
   return (
@@ -33,18 +26,12 @@ function isTypePredicateSubject(owner: ParameterOwner, parameterName: string): b
 }
 
 function unparsedParameter(
-  owner: ParameterOwner,
+  owner: SignatureNode,
   parameter: FunctionParameter,
   sourceCode: SourceCode
 ): UnparsedParameter | null {
   const annotation = functionParameterTypeAnnotation(parameter)
-  if (
-    annotation === null ||
-    annotation === undefined ||
-    !containsUnknownType(annotation.typeAnnotation)
-  ) {
-    return null
-  }
+  if (annotation === null || !containsUnknownType(annotation.typeAnnotation)) return null
 
   const name = functionParameterBindingName(parameter, sourceCode)
 
@@ -56,18 +43,18 @@ function unparsedParameter(
 export const noUnknownParametersRule: Rule = defineRule({
   meta: {
     type: "problem",
-    docs: {
-      description:
-        "Disallow explicitly unknown function parameters except `cause` and type-predicate subjects; decode unknown input at its I/O boundary instead.",
-    },
+    docs: ruleDocs(
+      "no-unknown-parameters",
+      "Disallow parameters typed as `unknown`, except `cause` and type-predicate subjects."
+    ),
     messages: {
       unknownParameter:
-        "Parameter `{{parameter}}` leaves input unparsed. Accept a named domain type; run the expected schema or parser at the I/O boundary before calling this function.",
+        "Parameter `{{parameter}}` accepts `unknown`. Use a named type and parse the input before the call.",
     },
   },
 
   createOnce(context) {
-    const checkParameters = (node: ParameterOwner) => {
+    const checkParameters = (node: SignatureNode) => {
       for (const parameter of node.params) {
         const unparsed = unparsedParameter(node, parameter, context.sourceCode)
         if (unparsed === null) continue
@@ -80,17 +67,6 @@ export const noUnknownParametersRule: Rule = defineRule({
       }
     }
 
-    return {
-      ArrowFunctionExpression: checkParameters,
-      FunctionDeclaration: checkParameters,
-      FunctionExpression: checkParameters,
-      TSCallSignatureDeclaration: checkParameters,
-      TSConstructorType: checkParameters,
-      TSConstructSignatureDeclaration: checkParameters,
-      TSDeclareFunction: checkParameters,
-      TSEmptyBodyFunctionExpression: checkParameters,
-      TSFunctionType: checkParameters,
-      TSMethodSignature: checkParameters,
-    }
+    return signatureVisitor(checkParameters)
   },
 })

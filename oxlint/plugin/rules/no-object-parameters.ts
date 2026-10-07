@@ -5,21 +5,14 @@ import {
   functionParameterBindingName,
   functionParameterTypeAnnotation,
 } from "./lib/ast/function-parameters.ts"
+import { signatureVisitor, type SignatureNode } from "./lib/ast/signatures.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
 import {
   createTypeAliasEnvironment,
   resolvedTypeMatches,
   type ResolvedTypeMatcher,
   type TypeAliasEnvironment,
 } from "./lib/types/type-alias-resolution.ts"
-
-type ParameterOwner =
-  | ESTree.ArrowFunctionExpression
-  | ESTree.Function
-  | ESTree.TSCallSignatureDeclaration
-  | ESTree.TSConstructSignatureDeclaration
-  | ESTree.TSConstructorType
-  | ESTree.TSFunctionType
-  | ESTree.TSMethodSignature
 
 const isObjectKeyword: ResolvedTypeMatcher = (resolved, matches) => {
   if (resolved.type === "TSObjectKeyword") return true
@@ -37,14 +30,10 @@ function resolvesToObject(type: ESTree.TSType, environment: TypeAliasEnvironment
   return environment !== null && resolvedTypeMatches(type, environment, isObjectKeyword)
 }
 
-function reportObjectParameters(context: Context, state: FileState, node: ParameterOwner): void {
+function reportObjectParameters(context: Context, state: FileState, node: SignatureNode): void {
   for (const parameter of node.params) {
     const annotation = functionParameterTypeAnnotation(parameter)
-    if (
-      annotation === null ||
-      annotation === undefined ||
-      !resolvesToObject(annotation.typeAnnotation, state.environment)
-    ) {
+    if (annotation === null || !resolvesToObject(annotation.typeAnnotation, state.environment)) {
       continue
     }
 
@@ -58,32 +47,19 @@ function reportObjectParameters(context: Context, state: FileState, node: Parame
 
 export const noObjectParametersRule: Rule = defineRule({
   meta: {
+    docs: ruleDocs("no-object-parameters", "Disallow parameters typed as `object`."),
     type: "problem",
-    docs: {
-      description:
-        "Disallow object function parameters; inputs must use an owner-provided type and be parsed at their boundary.",
-    },
     messages: {
       objectParameter:
-        "Parameter `{{parameter}}` uses the broad `object` type. Accept a named owner type; parse external input at its boundary before calling this function.",
+        "Parameter `{{parameter}}` has the broad `object` type. Use a named type and parse external input before the call.",
     },
   },
 
   createOnce(context) {
     const state: FileState = { environment: null }
-    const checkParameters = (node: ParameterOwner) => reportObjectParameters(context, state, node)
 
     return {
-      ArrowFunctionExpression: checkParameters,
-      FunctionDeclaration: checkParameters,
-      FunctionExpression: checkParameters,
-      TSCallSignatureDeclaration: checkParameters,
-      TSConstructorType: checkParameters,
-      TSConstructSignatureDeclaration: checkParameters,
-      TSDeclareFunction: checkParameters,
-      TSEmptyBodyFunctionExpression: checkParameters,
-      TSFunctionType: checkParameters,
-      TSMethodSignature: checkParameters,
+      ...signatureVisitor((node) => reportObjectParameters(context, state, node)),
 
       Program(node) {
         state.environment = createTypeAliasEnvironment(node, context.sourceCode.visitorKeys)

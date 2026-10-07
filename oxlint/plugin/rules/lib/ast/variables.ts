@@ -1,11 +1,7 @@
 import type { Definition, ESTree, Scope, SourceCode, Variable } from "@oxlint/plugins"
 
 /**
- * Resolves an identifier to its variable by walking up the scope chain from the identifier's scope.
- *
- * @param sourceCode - The source code whose scope manager is searched.
- * @param identifier - The identifier reference to resolve.
- * @returns The variable, or null when no enclosing scope declares the name.
+ * Resolves an identifier by walking up the scope chain from its own scope.
  */
 export function resolveVariable(
   sourceCode: SourceCode,
@@ -24,23 +20,15 @@ export function resolveVariable(
 }
 
 /**
- * Gives a variable's definition when it has exactly one.
- *
- * @param variable - The variable to inspect, or null.
- * @returns The sole definition, or undefined when there is none or more than
- * one.
+ * A variable's definition when it has exactly one.
  */
 export function singleDefinition(variable: Variable | null): Definition | undefined {
   return variable?.defs.length === 1 ? variable.defs[0] : undefined
 }
 
 /**
- * Finds the declarator that defines a variable when it is declared exactly once by a variable
- * declaration.
- *
- * @param variable - The variable to inspect.
- * @returns The declarator, or null for a parameter, import, function, or
- * multiply-defined variable.
+ * The declarator of a variable declared exactly once by a variable declaration. Parameters,
+ * imports and functions have none.
  */
 export function variableDeclarator(variable: Variable): ESTree.VariableDeclarator | null {
   const definition = singleDefinition(variable)
@@ -51,19 +39,15 @@ export function variableDeclarator(variable: Variable): ESTree.VariableDeclarato
 }
 
 /**
- * Reports whether a variable is a `const` that is never written after its initialiser.
- *
- * @param variable - The variable whose references are checked.
- * @param declarator - The declarator that defines the variable.
- * @returns Whether the binding's value cannot change.
+ * The declarator of a `const` that is never written after its initialiser.
  */
-export function isStableConstVariable(
-  variable: Variable,
-  declarator: ESTree.VariableDeclarator
-): boolean {
-  return (
-    declarator.parent.type === "VariableDeclaration" &&
-    declarator.parent.kind === "const" &&
-    variable.references.every((reference) => reference.init || !reference.isWrite())
+export function stableConstDeclarator(variable: Variable): ESTree.VariableDeclarator | null {
+  const declarator = variableDeclarator(variable)
+  const isConst =
+    declarator?.parent.type === "VariableDeclaration" && declarator.parent.kind === "const"
+  const isRewritten = variable.references.some(
+    (reference) => reference.isWrite() && !reference.init
   )
+
+  return isConst && !isRewritten ? declarator : null
 }

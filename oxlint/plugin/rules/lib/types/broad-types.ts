@@ -4,14 +4,16 @@ import { typeReferenceName } from "./type-syntax.ts"
 
 export type BroadTypeKind = "object" | "record" | "top"
 
-const BROAD_KEY_KEYWORDS = new Set(["TSNumberKeyword", "TSStringKeyword", "TSSymbolKeyword"])
+// Key types that admit any property name.
+export const BROAD_KEY_KEYWORDS: ReadonlySet<string> = new Set([
+  "TSNumberKeyword",
+  "TSStringKeyword",
+  "TSSymbolKeyword",
+])
 
 /**
  * Classifies a type that widens a value: `unknown` or `any` is `top`, the `object` keyword is
- * `object`, and a `Record` or index signature with an unknown value is `record`.
- *
- * @param type - The type annotation to classify, parentheses ignored.
- * @returns The broad kind, or null when the type is narrower than any of them.
+ * `object`, and a `Record` or index signature with an `unknown` value is `record`.
  */
 export function broadTypeKind(type: ESTree.TSType): BroadTypeKind | null {
   const unwrapped = unwrapTypeParentheses(type)
@@ -23,13 +25,7 @@ export function broadTypeKind(type: ESTree.TSType): BroadTypeKind | null {
 }
 
 /**
- * Reports whether two types are written identically once whitespace and outer parentheses are
- * ignored.
- *
- * @param sourceText - The full source text the types were parsed from.
- * @param left - The first type, or null when there is none to compare.
- * @param right - The second type.
- * @returns Whether both types are present and spelled the same.
+ * Whether both types are present and written the same, ignoring whitespace and outer parentheses.
  */
 export function typesHaveSameSyntax(
   sourceText: string,
@@ -44,11 +40,8 @@ export function typesHaveSameSyntax(
 }
 
 /**
- * Reports whether a type can only ever describe an object, such as an array, tuple, function,
- * mapped type, non-empty literal, or an intersection of those.
- *
- * @param type - The type annotation to inspect, parentheses ignored.
- * @returns Whether the type is syntactically guaranteed to be an object.
+ * Whether a type can only describe an object: an array, tuple, function, mapped type, non-empty
+ * literal, or an intersection of those.
  */
 export function isDefinitelyObjectType(type: ESTree.TSType): boolean {
   const unwrapped = unwrapTypeParentheses(type)
@@ -73,11 +66,8 @@ export function isDefinitelyObjectType(type: ESTree.TSType): boolean {
 }
 
 /**
- * Reports whether a type says more than a broad record: a literal with a named member, or a
- * `Record` (possibly `Readonly`) whose value type is not `unknown` or `any`.
- *
- * @param type - The type annotation to inspect, parentheses ignored.
- * @returns Whether the type is a record narrower than the broad record kind.
+ * Whether a type says more than a broad record: a literal with a named member, or a `Record`
+ * (possibly `Readonly`) whose value type is not `unknown` or `any`.
  */
 export function isDefinitelyNarrowerRecordType(type: ESTree.TSType): boolean {
   const unwrapped = unwrapTypeParentheses(type)

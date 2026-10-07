@@ -11,9 +11,6 @@ import { resolveReference, topLevelResolution, type ReferenceTarget } from "./ty
 import { unwrapTransparentType } from "./type-syntax.ts"
 import { unsafeDirectValue, type UnsafeValue } from "./unsafe-values.ts"
 
-export type { WideningTarget } from "./dictionary-values.ts"
-export { createTypeEnvironment, type TypeEnvironment } from "./type-environment.ts"
-
 export interface UnsafeDictionary {
   readonly kind: "unsafe-dictionary"
   readonly unsafeValue: UnsafeValue
@@ -22,12 +19,8 @@ export interface UnsafeDictionary {
 type AliasTarget = Extract<ReferenceTarget, { kind: "alias" }>
 
 /**
- * Classifies a dictionary value type on its own, for callers that already hold the value rather
- * than the dictionary, such as an interface index signature.
- *
- * @param valueType - The value type to inspect.
- * @param environment - The file's interfaces and type aliases.
- * @returns The unsafe classification, or null when the value type is concrete.
+ * Classifies a dictionary value type on its own, for callers that hold only the value, such as an
+ * interface index signature.
  */
 export function classifyUnsafeDictionaryValue(
   valueType: ESTree.TSType,
@@ -37,13 +30,8 @@ export function classifyUnsafeDictionaryValue(
 }
 
 /**
- * Finds the first value type of a dictionary that is `unknown`, `any`, `object`, `{}` or a union
- * carrying one, following aliases, `Record` and `Pick`.
- *
- * @param type - The candidate dictionary type.
- * @param environment - The file's interfaces and type aliases.
- * @returns The unsafe classification, or null when every value type is
- * concrete.
+ * The first value type of a dictionary that is `unknown`, `any`, `object`, `{}` or a union holding
+ * one, following aliases, `Record` and `Pick`. Null when every value type is concrete.
  */
 export function classifyUnsafeDictionary(
   type: ESTree.TSType,
@@ -62,11 +50,6 @@ export function classifyUnsafeDictionary(
 /**
  * Classifies an annotation as a widening destination: `unknown`, `object`, an anonymous object
  * literal, an open dictionary, or a generic container alias.
- *
- * @param type - The annotated type an expression flows into.
- * @param environment - The file's interfaces and type aliases.
- * @returns The destination kind, or null when the type is not a widening
- * target.
  */
 export function classifyWideningTarget(
   type: ESTree.TSType,

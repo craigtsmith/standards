@@ -1,19 +1,13 @@
 import type { ESTree } from "@oxlint/plugins"
 
+import { BROAD_KEY_KEYWORDS } from "./broad-types.ts"
 import { visibleTypeAlias } from "./type-alias-resolution.ts"
 import { isBuiltIn, isUnappliedReferenceTo, type Resolution } from "./type-references.ts"
 import { typeReferenceName, unwrapTransparentType } from "./type-syntax.ts"
 
-const BROAD_KEY_KEYWORDS = new Set(["TSNumberKeyword", "TSStringKeyword", "TSSymbolKeyword"])
-
 /**
- * Reports whether a mapped-type key admits arbitrary names: `string`, `number` or `symbol`, a union
- * holding one, or a reference that resolves to one.
- *
- * @param type - The key type to inspect.
- * @param resolution - The environment, substitutions and aliases in progress used to follow
- *   references.
- * @returns Whether the key is broad.
+ * Whether a mapped-type key admits arbitrary names: `string`, `number` or `symbol`, a union holding
+ * one, or a reference that resolves to one.
  */
 export function isBroadMappedKey(type: ESTree.TSType, resolution: Resolution): boolean {
   const unwrapped = unwrapTransparentType(type)
@@ -27,12 +21,8 @@ export function isBroadMappedKey(type: ESTree.TSType, resolution: Resolution): b
 }
 
 /**
- * Reports whether a `Record` key is broad. A missing key argument counts as broad, and the check
+ * Whether a `Record` key admits arbitrary names. A missing key counts as broad, and the check
  * starts with an empty cycle guard.
- *
- * @param key - The `Record` key type, or null when none was supplied.
- * @param resolution - The environment and substitutions used to follow references in the key.
- * @returns Whether the record admits arbitrary property names.
  */
 export function hasBroadRecordKey(key: ESTree.TSType | null, resolution: Resolution): boolean {
   return key === null || isBroadMappedKey(key, { ...resolution, resolving: new Set() })

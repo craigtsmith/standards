@@ -12,25 +12,16 @@ export interface Resolution {
 export type Substitutions = ReadonlyMap<string, ESTree.TSType>
 
 /**
- * Builds the resolution for a type read at the top level, with no substitutions and no aliases in
- * progress.
- *
- * @param environment - The file's interfaces and type aliases.
- * @returns A fresh resolution over the environment.
+ * A resolution for a type read at the top level, with no substitutions or aliases in progress.
  */
 export function topLevelResolution(environment: TypeEnvironment): Resolution {
   return { environment, resolving: new Set(), substitutions: new Map() }
 }
 
 /**
- * Binds an alias's type parameters to the arguments a reference supplies, with each argument
- * resolved through earlier bindings so a chain of parameters collapses.
- *
- * @param alias - The alias being expanded.
- * @param reference - The reference supplying the type arguments.
- * @param base - The substitutions in force where the reference stands.
- * @returns The extended substitutions, or null when a parameter has neither an argument nor a
- *   default.
+ * Binds an alias's type parameters to the arguments a reference supplies, each resolved through
+ * earlier bindings so a chain of parameters collapses. Null when a parameter has neither an
+ * argument nor a default.
  */
 export function aliasSubstitution(
   alias: ESTree.TSTypeAliasDeclaration,

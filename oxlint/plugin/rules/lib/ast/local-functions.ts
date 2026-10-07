@@ -18,11 +18,7 @@ export interface PredicateCall {
 export type FunctionExpression = ESTree.ArrowFunctionExpression | ESTree.Function
 
 /**
- * Reports whether a node is any function form: arrow, declaration, expression, or a bodiless
- * declaration.
- *
- * @param node - The node to test.
- * @returns Whether the node is a function.
+ * Whether a node is any function form, bodiless declarations included.
  */
 export function isFunctionExpression(node: ESTree.Node): node is FunctionExpression {
   return (
@@ -35,13 +31,8 @@ export function isFunctionExpression(node: ESTree.Node): node is FunctionExpress
 }
 
 /**
- * Finds the function a callee refers to: the callee itself when it is a function literal, or the
- * single local definition of an identifier callee.
- *
- * @param sourceCode - The source code used to resolve the identifier.
- * @param callee - The call's callee expression.
- * @returns The function node, or null when the callee cannot be resolved to one
- * local function.
+ * The function a callee refers to: the callee itself when it is a function literal, or the single
+ * local definition of an identifier callee.
  */
 export function localFunctionForCall(
   sourceCode: SourceCode,
@@ -60,11 +51,6 @@ export function localFunctionForCall(
 /**
  * Matches a call to a local type-predicate function and pairs the predicate's subject parameter
  * with the argument passed for it.
- *
- * @param sourceCode - The source code used to resolve the callee.
- * @param node - The call expression to inspect.
- * @returns The argument, owning function, and parameter, or null when the call is not a resolvable
- *   predicate call.
  */
 export function predicateCall(
   sourceCode: SourceCode,
@@ -84,27 +70,16 @@ export function predicateCall(
 }
 
 /**
- * Reports whether a parameter is annotated with `unknown`, alone or as a union member.
- *
- * @param parameter - The parameter pattern to inspect.
- * @returns Whether the parameter's annotation contains `unknown`.
+ * Whether a parameter is annotated with `unknown`, alone or as a union member.
  */
 export function hasUnknownAnnotation(parameter: FunctionParameter): boolean {
   const annotation = functionParameterTypeAnnotation(parameter)
 
-  return (
-    annotation !== null &&
-    annotation !== undefined &&
-    containsUnknownType(annotation.typeAnnotation)
-  )
+  return annotation !== null && containsUnknownType(annotation.typeAnnotation)
 }
 
 /**
- * Finds the nearest arrow function, function declaration, or function expression that contains a
- * node.
- *
- * @param node - The node to start from.
- * @returns The enclosing function, or null when the node sits at module level.
+ * The nearest function with a body at or above a node, or null at module level.
  */
 export function enclosingFunction(node: ESTree.Node): FunctionExpression | null {
   let current: ESTree.Node = node
@@ -125,10 +100,7 @@ export function enclosingFunction(node: ESTree.Node): FunctionExpression | null 
 }
 
 /**
- * Gives a property key's name as written: an identifier's name, a literal's value, or the key's
- * source text.
- *
- * @param sourceCode - The source code used to read a computed key's text.
+ * A property key's name as written: an identifier's name, a literal's value, or its source text.
  */
 export function sourceKeyName(sourceCode: SourceCode, key: ESTree.PropertyKey): string {
   if (key.type === "Identifier" || key.type === "PrivateIdentifier") return key.name
@@ -139,11 +111,7 @@ export function sourceKeyName(sourceCode: SourceCode, key: ESTree.PropertyKey): 
 }
 
 /**
- * Gives a function's name for a message, falling back to the variable or method it is assigned to.
- *
- * @param sourceCode - The source code used to read a method key's text.
- * @param owner - The function to name, or null when there is none.
- * @returns The name, or `anonymous function` when none can be found.
+ * A function's name for a message, falling back to the variable or method it is assigned to.
  */
 export function functionName(sourceCode: SourceCode, owner: FunctionExpression | null): string {
   if (owner === null) return "anonymous function"

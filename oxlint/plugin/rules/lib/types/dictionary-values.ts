@@ -23,12 +23,8 @@ export type WideningTargetKind =
 const OPEN_DICTIONARY: WideningTarget = { kind: "open dictionary" }
 
 /**
- * Collects the value types a dictionary holds: its index signatures, a mapped type's template, or
- * the value reached through an alias, `Record` or `Pick`.
- *
- * @param type - The candidate dictionary type.
- * @param resolution - The environment and substitutions used to follow references.
- * @returns Each value type paired with the resolution it must be read under.
+ * The value types a dictionary holds, each with the resolution it is read under: its index
+ * signatures, a mapped type's template, or the value reached through an alias, `Record` or `Pick`.
  */
 export function dictionaryValueTypes(
   type: ESTree.TSType,
@@ -47,13 +43,8 @@ export function dictionaryValueTypes(
 }
 
 /**
- * Classifies a type reached through an alias as `unknown`, `object` or an open dictionary, where a
- * mapped type counts only when its key is broad.
- *
- * @param type - The alias body or other resolved type.
- * @param resolution - The environment and substitutions used to follow references.
- * @returns The widening target kind, or null when the type is neither broad nor
- * open.
+ * Classifies a type reached through an alias as `unknown`, `object` or an open dictionary. A mapped
+ * type counts only when its key is broad.
  */
 export function classifyAliasBroadTarget(
   type: ESTree.TSType,

@@ -6,11 +6,8 @@ import { functionName, hasUnknownAnnotation, predicateCall } from "../ast/local-
 import { hasKnownCallArgumentEvidence } from "./known-evidence.ts"
 
 /**
- * Reports a call that passes an argument with known type evidence into a local type-predicate
- * parameter annotated `unknown`, since the call widens what is already known.
- *
- * @param flow - The rule's flow state and context; does nothing when no type environment exists.
- * @param node - The call expression to check.
+ * Reports a call that passes an argument of known type into a local type-predicate parameter
+ * annotated `unknown`. Does nothing until the file's type environment exists.
  */
 export function callFlow(flow: Flow, node: ESTree.CallExpression): void {
   const { environment } = flow.state

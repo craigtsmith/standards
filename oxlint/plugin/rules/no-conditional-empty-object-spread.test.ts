@@ -7,6 +7,7 @@ ruleTester.run("no-conditional-empty-object-spread", noConditionalEmptyObjectSpr
     { code: "const a = { ...(flag ? {} : { extra }) }", errors: [{ messageId: "avoid" }] },
     { code: "const a = { ...(flag && extra ? { extra } : {}) }", errors: [{ messageId: "avoid" }] },
     { code: "const a = { ...((flag ? { extra } : {})) }", errors: [{ messageId: "avoid" }] },
+    { code: "const a = { ...(flag ? { extra } : ({})) }", errors: [{ messageId: "avoid" }] },
     {
       code: "const a = { ...(a ? { a } : {}), ...(b ? { b } : {}) }",
       errors: [{ messageId: "avoid" }, { messageId: "avoid" }],
@@ -19,5 +20,7 @@ ruleTester.run("no-conditional-empty-object-spread", noConditionalEmptyObjectSpr
     // An array spread is a different construct.
     "const a = [...(flag ? [1] : [])]",
     "fn(...(flag ? [1] : []))",
+    // Only a literal `{}` counts as empty; an asserted one is left alone.
+    "const a = { ...(flag ? { extra } : ({} as Extra)) }",
   ],
 })

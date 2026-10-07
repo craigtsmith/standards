@@ -1,6 +1,7 @@
 import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
+import { ruleDocs } from "./lib/rule-meta.ts"
 import {
   createTypeAliasEnvironment,
   resolvedTypeMatches,
@@ -9,14 +10,11 @@ import {
 
 export const noUnknownTypeAliasesRule: Rule = defineRule({
   meta: {
+    docs: ruleDocs("no-unknown-type-aliases", "Disallow type aliases that resolve to `unknown`."),
     type: "problem",
-    docs: {
-      description:
-        "Disallow type aliases whose resolved type is unknown; unknown must remain visible at an allowed boundary.",
-    },
     messages: {
       unknownAlias:
-        "Type alias `{{alias}}` hides `unknown`. Keep `unknown` explicit at the parsing boundary or on an allowed `cause` field; otherwise use the parsed owner type.",
+        "Type alias `{{alias}}` hides `unknown` behind a name. Write `unknown` where it is used, or alias the parsed type.",
     },
   },
 

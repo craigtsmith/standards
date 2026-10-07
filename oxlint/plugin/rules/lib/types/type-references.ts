@@ -5,6 +5,8 @@ import { aliasSubstitution, type Resolution } from "./resolution.ts"
 import { hasVisibleTypeBinding, visibleTypeAlias } from "./type-alias-resolution.ts"
 import { typeArgumentAt, typeReferenceName, unwrapTransparentType } from "./type-syntax.ts"
 
+export { topLevelResolution, type Resolution } from "./resolution.ts"
+
 const BUILT_INS = new Set([
   "NonNullable",
   "Omit",
@@ -36,27 +38,17 @@ export type ReferenceTarget =
   | { readonly kind: "unapplied" }
   | { readonly kind: "wrapped"; readonly type: ESTree.TSType }
 
-export { topLevelResolution, type Resolution } from "./resolution.ts"
 /**
- * Reports whether a name refers to one of the TypeScript utility types this module understands,
- * rather than to a local binding that shadows it.
- *
- * @param name - The referenced name.
- * @param use - The node where the name is used.
- * @param environment - The file's interfaces and type aliases.
- * @returns Whether the name is an unshadowed built-in.
+ * Whether a name refers to one of the TypeScript utility types this module understands, with no
+ * local binding shadowing it.
  */
 export function isBuiltIn(name: string, use: ESTree.Node, environment: TypeEnvironment): boolean {
   return BUILT_INS.has(name) && !hasVisibleTypeBinding(name, use, environment.typeAliases)
 }
 
 /**
- * Reports whether a type is a bare reference to the given name with no type arguments, which marks
- * a substitution that maps a parameter to itself.
- *
- * @param type - The type to inspect.
- * @param name - The name the reference must carry.
- * @returns Whether the type is an argument-free reference to the name.
+ * Whether a type is a bare reference to `name` with no type arguments, which marks a substitution
+ * that maps a parameter to itself.
  */
 export function isUnappliedReferenceTo(type: ESTree.TSType, name: string): boolean {
   const unwrapped = unwrapTransparentType(type)
@@ -70,11 +62,7 @@ export function isUnappliedReferenceTo(type: ESTree.TSType, name: string): boole
 
 /**
  * Resolves a type reference one step: a substituted parameter, a built-in utility type, a local
- * interface, or an alias with its arguments bound.
- *
- * @param reference - The reference to resolve.
- * @param resolution - The environment, substitutions and aliases in progress.
- * @returns What the reference names, or null when it is unknown or a cycle.
+ * interface, or an alias with its arguments bound. Null when it is unknown or a cycle.
  */
 export function resolveReference(
   reference: ESTree.TSTypeReference,
@@ -107,8 +95,9 @@ function builtInTarget(
   if (!isBuiltIn(name, reference, environment)) return null
 
   const first = typeArgumentAt(reference, 0)
-  if (TRANSPARENT_WRAPPERS.has(name))
+  if (TRANSPARENT_WRAPPERS.has(name)) {
     return first === null ? null : { kind: "wrapped", type: first }
+  }
 
   if (name === "Record") return { key: first, kind: "record", value: typeArgumentAt(reference, 1) }
 

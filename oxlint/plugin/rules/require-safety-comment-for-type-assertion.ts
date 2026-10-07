@@ -1,9 +1,8 @@
 import type { ESTree, Options, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
-type TypeAssertion = ESTree.TSAsExpression | ESTree.TSTypeAssertion
-
-const DEFAULT_SAFETY_MARKERS = ["SAFETY"] as const
+import { isConstAssertion, type TypeAssertion } from "./lib/ast/assertions.ts"
+import { ruleDocs, ruleOption } from "./lib/rule-meta.ts"
 
 const commentOwnerKinds = new Set([
   "ExpressionStatement",
@@ -13,28 +12,11 @@ const commentOwnerKinds = new Set([
   "VariableDeclaration",
 ])
 
-function isConstAssertion(node: TypeAssertion): boolean {
-  return (
-    node.typeAnnotation.type === "TSTypeReference" &&
-    node.typeAnnotation.typeName.type === "Identifier" &&
-    node.typeAnnotation.typeName.name === "const"
-  )
-}
+// The schema and default guarantee a non-empty list of non-blank strings.
+function configuredMarkers(value: Options[number] | undefined): readonly string[] {
+  if (!Array.isArray(value)) return []
 
-// Among JSON primitives, a string is the one equal to its own `String()`.
-function isNonBlankString(value: Options[number]): value is string {
-  return !(value instanceof Object) && String(value) === value && value.trim().length > 0
-}
-
-function configuredSafetyMarkers(option: Options[number] | undefined): readonly string[] {
-  if (!(option instanceof Object) || Array.isArray(option)) return DEFAULT_SAFETY_MARKERS
-
-  const configured = option["markers"]
-  if (!Array.isArray(configured)) return DEFAULT_SAFETY_MARKERS
-
-  const markers = configured.filter(isNonBlankString).map((marker) => marker.trim())
-
-  return markers.length > 0 ? markers : DEFAULT_SAFETY_MARKERS
+  return value.flatMap((marker) => (marker instanceof Object ? [] : [String(marker).trim()]))
 }
 
 function markerPattern(markers: readonly string[]): RegExp {
@@ -66,13 +48,13 @@ export const requireSafetyCommentForTypeAssertionRule: Rule = defineRule({
   meta: {
     defaultOptions: [{ markers: ["SAFETY"] }],
     type: "problem",
-    docs: {
-      description:
-        "Require a nearby SAFETY comment for every TypeScript type assertion except const assertions.",
-    },
+    docs: ruleDocs(
+      "require-safety-comment-for-type-assertion",
+      "Require a justification comment before each type assertion except `as const`."
+    ),
     messages: {
       missingSafetyComment:
-        "This type assertion has no `{{marker}}:` justification. State the checked invariant immediately before the assertion or its containing statement.",
+        "This type assertion has no `{{marker}}:` comment. State why it is safe above the assertion or its statement.",
     },
     schema: [
       {
@@ -80,7 +62,7 @@ export const requireSafetyCommentForTypeAssertionRule: Rule = defineRule({
         type: "object",
         properties: {
           markers: {
-            items: { minLength: 1, type: "string" },
+            items: { minLength: 1, pattern: "\\S", type: "string" },
             minItems: 1,
             type: "array",
             uniqueItems: true,
@@ -91,16 +73,12 @@ export const requireSafetyCommentForTypeAssertionRule: Rule = defineRule({
   },
 
   createOnce(context) {
-    const patterns = new Map<string, RegExp>()
+    // Set per file by `Program`, which is visited before any assertion.
+    let markers: readonly string[] = []
+    let pattern = markerPattern(markers)
 
     const checkAssertion = (node: TypeAssertion) => {
       if (isConstAssertion(node)) return
-
-      const markers = configuredSafetyMarkers(context.options[0])
-      const patternKey = markers.join(" ")
-      const pattern = patterns.get(patternKey) ?? markerPattern(markers)
-
-      patterns.set(patternKey, pattern)
 
       const justified = (owner: ESTree.Node) =>
         context.sourceCode
@@ -110,12 +88,20 @@ export const requireSafetyCommentForTypeAssertionRule: Rule = defineRule({
       if (hasSafetyComment(node, justified)) return
 
       context.report({
-        data: { marker: markers[0] ?? DEFAULT_SAFETY_MARKERS[0] },
+        data: { marker: markers[0] ?? "" },
         messageId: "missingSafetyComment",
         node,
       })
     }
 
-    return { TSAsExpression: checkAssertion, TSTypeAssertion: checkAssertion }
+    return {
+      TSAsExpression: checkAssertion,
+      TSTypeAssertion: checkAssertion,
+
+      Program() {
+        markers = configuredMarkers(ruleOption(context, "markers"))
+        pattern = markerPattern(markers)
+      },
+    }
   },
 })

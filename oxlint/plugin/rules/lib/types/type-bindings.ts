@@ -24,12 +24,8 @@ const scopeKinds = new Set([
 ])
 
 /**
- * Walks a program and records every type-level name declared by an alias, interface, enum, class or
- * import, keyed by name and tagged with its scope.
- *
- * @param program - The file's root node.
- * @param visitorKeys - The child keys used to walk the tree.
- * @returns The alias declarations and the bindings grouped by name.
+ * Every type-level name a program declares by an alias, interface, enum, class or import, grouped
+ * by name and tagged with its scope.
  */
 export function collectTypeBindings(
   program: ESTree.Program,
@@ -58,14 +54,8 @@ export function collectTypeBindings(
 }
 
 /**
- * Finds the bindings of a name declared in the closest scope enclosing a use site. Several bindings
- * come back when that scope declares the name more than once.
- *
- * @param name - The referenced name.
- * @param use - The node where the name is used.
- * @param bindingsByName - The bindings collected for the file.
- * @returns The bindings in the nearest enclosing scope, or none when no scope
- * declares the name.
+ * The bindings of a name in the closest scope enclosing a use site. Several come back when that
+ * scope declares the name more than once, and none when no scope declares it.
  */
 export function nearestTypeBindings(
   name: string,

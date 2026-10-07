@@ -1,25 +1,21 @@
 import { defineRule, type Rule } from "@oxlint/plugins"
 
 import { isGlobalReflectMethodCall } from "./lib/ast/reflect-method.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
 
 export const noReflectApplyRule: Rule = defineRule({
   meta: {
+    docs: ruleDocs("no-reflect-apply", "Disallow `Reflect.apply`."),
     type: "problem",
-    docs: {
-      description:
-        "Disallow Reflect.apply; call typed functions directly or model dynamic dispatch behind an interface.",
-    },
     messages: {
       reflectApply:
-        "Replace `Reflect.apply` with a typed function call. Model dynamic dispatch behind a named interface.",
+        "`Reflect.apply` can return `any`, which turns off type checking. Call the function directly.",
     },
   },
 
   createOnce(context) {
     return {
       CallExpression(node) {
-        if (node.callee.type === "Super" || node.callee.type === "V8IntrinsicExpression") return
-
         if (isGlobalReflectMethodCall(context.sourceCode, node.callee, "apply")) {
           context.report({ messageId: "reflectApply", node })
         }

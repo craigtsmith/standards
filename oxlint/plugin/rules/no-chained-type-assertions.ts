@@ -1,33 +1,11 @@
 import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
-type TypeAssertionExpression = ESTree.TSAsExpression | ESTree.TSTypeAssertion
+import { isConstAssertion, isTypeAssertion, type TypeAssertion } from "./lib/ast/assertions.ts"
+import { unwrapExpressionParentheses } from "./lib/ast/expressions.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
 
-function isTypeAssertionExpression(node: ESTree.Node): node is TypeAssertionExpression {
-  return node.type === "TSAsExpression" || node.type === "TSTypeAssertion"
-}
-
-function unwrapParenthesizedExpression(expression: ESTree.Expression): ESTree.Expression {
-  let current = expression
-
-  while (current.type === "ParenthesizedExpression") {
-    current = current.expression
-  }
-
-  return current
-}
-
-function isConstAssertion(node: TypeAssertionExpression): boolean {
-  const { typeAnnotation } = node
-
-  return (
-    typeAnnotation.type === "TSTypeReference" &&
-    typeAnnotation.typeName.type === "Identifier" &&
-    typeAnnotation.typeName.name === "const"
-  )
-}
-
-function isOutermostAssertionInChain(node: TypeAssertionExpression): boolean {
+function isOutermostAssertionInChain(node: TypeAssertion): boolean {
   let current: ESTree.Expression = node
   let parent = node.parent
 
@@ -36,18 +14,18 @@ function isOutermostAssertionInChain(node: TypeAssertionExpression): boolean {
     parent = parent.parent
   }
 
-  return !isTypeAssertionExpression(parent) || parent.expression !== current
+  return !isTypeAssertion(parent) || parent.expression !== current
 }
 
-function isForbiddenAssertionChain(node: TypeAssertionExpression): boolean {
+function isForbiddenAssertionChain(node: TypeAssertion): boolean {
   let assertionCount = 0
   let hasNonConstAssertion = false
   let current: ESTree.Expression = node
 
-  while (isTypeAssertionExpression(current)) {
+  while (isTypeAssertion(current)) {
     assertionCount += 1
     hasNonConstAssertion ||= !isConstAssertion(current)
-    current = unwrapParenthesizedExpression(current.expression)
+    current = unwrapExpressionParentheses(current.expression)
   }
 
   return assertionCount > 1 && hasNonConstAssertion
@@ -56,18 +34,18 @@ function isForbiddenAssertionChain(node: TypeAssertionExpression): boolean {
 export const noChainedTypeAssertionsRule: Rule = defineRule({
   meta: {
     type: "problem",
-    docs: {
-      description:
-        "Disallow chained TypeScript as and angle-bracket assertions, including parenthesized chains.",
-    },
+    docs: ruleDocs(
+      "no-chained-type-assertions",
+      "Disallow chaining type assertions, such as `value as unknown as T`."
+    ),
     messages: {
       chained:
-        "This assertion chain discards type evidence. Keep the original precise type, or parse untrusted input at its boundary before narrowing it.",
+        "This chain of type assertions hides the original type from the type checker. Keep the precise type or parse the input first.",
     },
   },
 
   createOnce(context) {
-    const checkTypeAssertion = (node: TypeAssertionExpression) => {
+    const checkTypeAssertion = (node: TypeAssertion) => {
       if (!isOutermostAssertionInChain(node) || !isForbiddenAssertionChain(node)) return
 
       context.report({ messageId: "chained", node })

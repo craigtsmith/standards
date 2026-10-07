@@ -23,7 +23,7 @@ function declaredNames(node: ESTree.Node): string[] {
   return "id" in node ? nameOf(node.id) : []
 }
 
-// The local names a statement exports by reference rather than by declaring them.
+// The local names a statement exports without declaring them.
 function reExportedNames(statement: ESTree.Statement | ESTree.Directive): string[] {
   switch (statement.type) {
     case "ExportDefaultDeclaration":
@@ -58,23 +58,16 @@ const settlesVisibility = (node: ESTree.Node): boolean =>
   node.parent?.type === "Program"
 
 /**
- * Collects the local names a module exports through a specifier list,
- * `export default name` or `export = name`, as opposed to an inline `export`.
- *
- * @param program - The module to scan.
- * @returns The local names the module exports by reference.
+ * The local names a module exports by reference: through a specifier list, `export default name`
+ * or `export = name`.
  */
 export function exportedNames(program: ESTree.Program): ReadonlySet<string> {
   return new Set(program.body.flatMap(reExportedNames))
 }
 
 /**
- * Whether a declaration is part of the module's public surface: it, or a declaration
- * enclosing it without crossing a function body, is exported or ambient.
- *
- * @param node - The declaration, member or property to check.
- * @param exported - The names the module exports by reference, from `exportedNames`.
- * @returns True when the declaration is reachable from outside the module.
+ * Whether a declaration is part of the module's public surface: it, or a declaration enclosing it
+ * without crossing a function body, is exported or ambient. `exported` comes from `exportedNames`.
  */
 export function isPublicDeclaration(node: ESTree.Node, exported: ReadonlySet<string>): boolean {
   const root = ancestors(node).find(settlesVisibility)

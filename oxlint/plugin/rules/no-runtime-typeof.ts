@@ -1,28 +1,11 @@
-import type { ESTree, Options, Rule } from "@oxlint/plugins"
+import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
-type RuntimeFunction = ESTree.ArrowFunctionExpression | ESTree.Function
-
-function isRuntimeFunction(node: ESTree.Node): node is RuntimeFunction {
-  return (
-    node.type === "ArrowFunctionExpression" ||
-    node.type === "FunctionDeclaration" ||
-    node.type === "FunctionExpression"
-  )
-}
+import { enclosingFunction } from "./lib/ast/local-functions.ts"
+import { ruleDocs, ruleOption } from "./lib/rule-meta.ts"
 
 function isInsideTypeGuard(node: ESTree.Node): boolean {
-  let current: ESTree.Node = node
-
-  while (current.type !== "Program") {
-    if (isRuntimeFunction(current)) {
-      return current.returnType?.typeAnnotation.type === "TSTypePredicate"
-    }
-
-    current = current.parent
-  }
-
-  return false
+  return enclosingFunction(node)?.returnType?.typeAnnotation.type === "TSTypePredicate"
 }
 
 function isExistenceProbe(node: ESTree.UnaryExpression): boolean {
@@ -36,21 +19,17 @@ function isExistenceProbe(node: ESTree.UnaryExpression): boolean {
   return other.type === "Literal" && other.value === "undefined"
 }
 
-function allowsTypeGuards(option: Options[number] | undefined): boolean {
-  return option instanceof Object && !Array.isArray(option) && option["allowInTypeGuards"] === true
-}
-
 export const noRuntimeTypeofRule: Rule = defineRule({
   meta: {
     defaultOptions: [{ allowInTypeGuards: false }],
     type: "problem",
-    docs: {
-      description:
-        "Disallow runtime typeof checks; external values must be decoded into meaningful types at their I/O boundary.",
-    },
+    docs: ruleDocs(
+      "no-runtime-typeof",
+      'Disallow `typeof` checks on values, apart from `typeof x === "undefined"`.'
+    ),
     messages: {
       runtimeTypeof:
-        "A `typeof` check narrows a representation without establishing its contract. Parse input at its I/O boundary, then branch on the domain value.",
+        "This `typeof` check inspects a value that was never parsed. Parse the input at its boundary first.",
     },
     schema: [
       {
@@ -64,11 +43,10 @@ export const noRuntimeTypeofRule: Rule = defineRule({
   createOnce(context) {
     return {
       UnaryExpression(node) {
-        const allowInTypeGuards = allowsTypeGuards(context.options[0])
         if (
           node.operator === "typeof" &&
           !isExistenceProbe(node) &&
-          (!allowInTypeGuards || !isInsideTypeGuard(node))
+          (ruleOption(context, "allowInTypeGuards") !== true || !isInsideTypeGuard(node))
         ) {
           context.report({ messageId: "runtimeTypeof", node })
         }

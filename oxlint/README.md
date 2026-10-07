@@ -62,7 +62,7 @@ oxlint's `extends` merges `rules`, `overrides` and `plugins`, and replaces `env`
 
 ## Tests
 
-`pnpm test` runs vitest over `plugin/rules/*.test.ts`. Each rule has one test file beside it, driven by `RuleTester` from `oxlint/plugins-dev`, which lints in-process through oxlint's own bindings. `plugin/rules/rule-tester.ts` binds the tester to vitest and exports two instances: `ruleTester` parses as `ts`, `tsxRuleTester` as `tsx` for cases that hold JSX. Columns in an expected error are zero-based. An `errors` entry with `data` must name every placeholder the message uses.
+`pnpm test` runs vitest over `plugin/rules/*.test.ts`. Each rule has one test file beside it, driven by `RuleTester` from `oxlint/plugins-dev`, which lints in-process through oxlint's own bindings. `plugin/rules/rule-tester.ts` binds the tester to vitest and exports `ruleTester`, which parses as `ts`. Columns in an expected error are zero-based. An `errors` entry with `data` must name every placeholder the message uses.
 
 ## Probes
 

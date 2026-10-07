@@ -1,8 +1,11 @@
-import type { ESTree, Scope, Variable } from "@oxlint/plugins"
+import type { ESTree, SourceCode, Variable } from "@oxlint/plugins"
 
+import { isTypeAssertion, type TypeAssertion } from "../ast/assertions.ts"
 import { unwrapExpressionParentheses } from "../ast/expressions.ts"
-import { variableDeclarator } from "../ast/variables.ts"
+import { isFunctionExpression, type FunctionExpression } from "../ast/local-functions.ts"
+import { resolveVariable, stableConstDeclarator } from "../ast/variables.ts"
 import { broadTypeKind } from "../types/broad-types.ts"
+import { SHAPED_VALUES } from "./syntactic-values.ts"
 
 export interface KnownValueEvidence {
   readonly type: ESTree.TSType | null
@@ -10,65 +13,34 @@ export interface KnownValueEvidence {
 
 export interface ValueFlow {
   readonly boundary: ESTree.Node | null
-  readonly scopes: readonly Scope[]
+  readonly sourceCode: SourceCode
 }
 
-type TypeAssertion = ESTree.TSAsExpression | ESTree.TSTypeAssertion
-
-const functionBoundaryTypes = new Set([
-  "ArrowFunctionExpression",
-  "FunctionDeclaration",
-  "FunctionExpression",
-  "TSDeclareFunction",
-  "TSEmptyBodyFunctionExpression",
-])
-
-const SYNTACTIC_VALUES = new Set([
-  "ArrayExpression",
-  "ArrowFunctionExpression",
-  "ClassExpression",
-  "FunctionExpression",
-  "Literal",
-  "NewExpression",
-  "ObjectExpression",
-  "TemplateLiteral",
-])
-
 /**
- * Gives the expression a type assertion applies to, with any parentheses removed.
- *
- * @param node - The `as` or angle-bracket assertion.
+ * The expression an assertion applies to, without parentheses.
  */
 export function assertedExpression(node: TypeAssertion): ESTree.Expression {
   return unwrapExpressionParentheses(node.expression)
 }
 
 /**
- * Finds the type assertion an expression is, once parentheses are removed.
- *
- * @param expression - The expression to inspect.
- * @returns The `as` or angle-bracket assertion, or null when the expression is
- * not one.
+ * The assertion an expression is once parentheses are removed, or null when it is not one.
  */
 export function assertionFromExpression(expression: ESTree.Expression): TypeAssertion | null {
   const unwrapped = unwrapExpressionParentheses(expression)
 
-  return unwrapped.type === "TSAsExpression" || unwrapped.type === "TSTypeAssertion"
-    ? unwrapped
-    : null
+  return isTypeAssertion(unwrapped) ? unwrapped : null
 }
 
 /**
- * Finds the nearest function of any form that encloses a node.
- *
- * @param node - The node to start from; the node itself is not considered.
- * @returns The enclosing function, or null when the node sits at module level.
+ * The nearest function of any form strictly above a node, bodiless signatures included, or null at
+ * module level. `enclosingFunction` skips bodiless signatures and counts the node itself.
  */
-export function functionBoundary(node: ESTree.Node): ESTree.Node | null {
+export function functionBoundary(node: ESTree.Node): FunctionExpression | null {
   let current = node.parent
 
   while (current !== null && current.type !== "Program") {
-    if (functionBoundaryTypes.has(current.type)) return current
+    if (isFunctionExpression(current)) return current
 
     current = current.parent
   }
@@ -77,61 +49,9 @@ export function functionBoundary(node: ESTree.Node): ESTree.Node | null {
 }
 
 /**
- * Finds the variable an identifier resolves to by matching its position against the references of
- * the given scopes.
- *
- * @param scopes - The scopes whose references are searched.
- * @param identifier - The identifier reference to resolve.
- * @returns The resolved variable, or null when no scope holds a reference at
- * that position.
- */
-export function resolvedVariableForIdentifier(
-  scopes: readonly Scope[],
-  identifier: ESTree.IdentifierReference
-): Variable | null {
-  for (const scope of scopes) {
-    const reference = scope.references.find(
-      (candidate) =>
-        candidate.identifier.start === identifier.start &&
-        candidate.identifier.end === identifier.end
-    )
-    if (reference !== undefined) return reference.resolved
-  }
-
-  return null
-}
-
-/**
- * Finds the declarator of a variable when it is a `const` that is never written after its
- * initialiser.
- *
- * @param variable - The variable to inspect.
- * @returns The declarator, or null when the variable is not a stable `const`.
- */
-export function stableConstDeclarator(variable: Variable): ESTree.VariableDeclarator | null {
-  const declarator = variableDeclarator(variable)
-  if (
-    declarator === null ||
-    declarator.parent.type !== "VariableDeclaration" ||
-    declarator.parent.kind !== "const"
-  ) {
-    return null
-  }
-
-  return variable.references.some((reference) => reference.isWrite() && !reference.init)
-    ? null
-    : declarator
-}
-
-/**
- * Finds what an expression's value is already known to be: a narrow asserted type, a syntactic
- * literal, or the annotation or initialiser of a stable `const` declared inside the same function.
- *
- * @param expression - The expression to trace.
- * @param flow - The function boundary and scopes the trace is confined to.
- * @param visitedVariables - Variables already traced, so a cycle stops.
- * @returns The evidence, with the known type or null for a syntactic value, or null when nothing is
- *   known.
+ * What an expression's value is already known to be: a narrow asserted type, a syntactic literal,
+ * or the annotation or initialiser of a stable `const` declared inside the same function. A
+ * syntactic value has a null `type`.
  */
 export function knownValueEvidence(
   expression: ESTree.Expression,
@@ -139,15 +59,13 @@ export function knownValueEvidence(
   visitedVariables: ReadonlySet<Variable>
 ): KnownValueEvidence | null {
   const unwrapped = unwrapExpressionParentheses(expression)
-  if (unwrapped.type === "TSAsExpression" || unwrapped.type === "TSTypeAssertion") {
-    return assertionEvidence(unwrapped.typeAnnotation)
-  }
+  if (isTypeAssertion(unwrapped)) return assertionEvidence(unwrapped.typeAnnotation)
 
-  if (SYNTACTIC_VALUES.has(unwrapped.type)) return { type: null }
+  if (SHAPED_VALUES.has(unwrapped.type)) return { type: null }
 
   if (unwrapped.type !== "Identifier") return null
 
-  const variable = resolvedVariableForIdentifier(flow.scopes, unwrapped)
+  const variable = resolveVariable(flow.sourceCode, unwrapped)
   if (variable === null || visitedVariables.has(variable)) return null
 
   return variableEvidence(variable, flow, visitedVariables)
@@ -173,7 +91,7 @@ function variableEvidence(
   visitedVariables: ReadonlySet<Variable>
 ): KnownValueEvidence | null {
   const annotated = variable.identifiers.find(
-    (identifier) => identifier.typeAnnotation !== null && identifier.typeAnnotation !== undefined
+    (identifier) => identifier.typeAnnotation?.typeAnnotation !== undefined
   )
   const annotation = annotated?.typeAnnotation?.typeAnnotation
   if (annotated !== undefined && annotation !== undefined) {

@@ -1,40 +1,33 @@
 import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
-function unwrapParentheses(node: ESTree.Expression): ESTree.Expression {
-  let current = node
+import { unwrapExpressionParentheses } from "./lib/ast/expressions.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
 
-  while (current.type === "ParenthesizedExpression") {
-    current = current.expression
-  }
-
-  return current
-}
-
-function isEmptyObjectExpression(node: ESTree.Expression): boolean {
+// A literal `{}` only: an asserted `{} as T` is left alone.
+function isBareEmptyObject(node: ESTree.Expression): boolean {
   return node.type === "ObjectExpression" && node.properties.length === 0
 }
 
 function isConditionalEmptyObjectSpread(node: ESTree.Expression): boolean {
-  const conditional = unwrapParentheses(node)
+  const conditional = unwrapExpressionParentheses(node)
 
   return (
     conditional.type === "ConditionalExpression" &&
-    (isEmptyObjectExpression(conditional.consequent) ||
-      isEmptyObjectExpression(conditional.alternate))
+    (isBareEmptyObject(conditional.consequent) || isBareEmptyObject(conditional.alternate))
   )
 }
 
 export const noConditionalEmptyObjectSpreadRule: Rule = defineRule({
   meta: {
     type: "suggestion",
-    docs: {
-      description:
-        "Disallow object spreads that conditionally spread an empty object to omit fields.",
-    },
+    docs: ruleDocs(
+      "no-conditional-empty-object-spread",
+      "Disallow spreading a conditional that yields an empty object to omit a property."
+    ),
     messages: {
       avoid:
-        "This conditional spread hides property omission behind an empty object. Build the object in separate statements and add the property only when present.",
+        "This spread omits a property by spreading an empty object. Add the property in a separate `if` statement.",
     },
   },
 

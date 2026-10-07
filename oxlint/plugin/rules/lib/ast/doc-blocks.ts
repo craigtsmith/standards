@@ -43,10 +43,10 @@ function documented(context: Context, token: Token | null): ESTree.Node | null {
   return nodesStartingAt(context, token.start).find((node) => DOCUMENTED.has(node.type)) ?? null
 }
 
-// A tag at the start of a line, as opposed to an inline `{@link}`.
+// A tag at the start of a line. An inline `{@link}` does not match.
 const BLOCK_TAG = /^[ \t]*\*?[ \t]*@\w+/mu
 
-// A block on something private is JSDoc only if it states a contract, not just prose.
+// A block on something private is JSDoc only when it carries a tag.
 const hasBlockTag = (comment: Comment): boolean => BLOCK_TAG.test(comment.value)
 
 // Everything in a declaration file is ambient, so all of it is public.
@@ -73,10 +73,7 @@ function placementFault(
 }
 
 /**
- * Whether a comment opens with the JSDoc marker, whatever else it does.
- *
- * @param comment - The comment to check.
- * @returns True for a block comment that starts with a second asterisk.
+ * Whether a comment is a block that opens with `/**`, whatever else it does.
  */
 export const isJsdocLike = (comment: Comment): boolean =>
   comment.type === "Block" && comment.value.startsWith("*")
@@ -93,10 +90,6 @@ const blankLineAfter = (context: Context, comment: Comment): boolean =>
 
 /**
  * Whether a comment is the file header: a well-formed block on the first line, before any token.
- *
- * @param context - The rule context for the file.
- * @param comment - The comment to check.
- * @returns True when the comment can serve as the file header.
  */
 export function isHeader(context: Context, comment: Comment): boolean {
   return (
@@ -108,13 +101,8 @@ export function isHeader(context: Context, comment: Comment): boolean {
 }
 
 /**
- * Whether a file header is missing the blank line after it. A header may run straight
- * into code only when it is really JSDoc for that code.
- *
- * @param context - The rule context for the file.
- * @param header - The comment `isHeader` accepted.
- * @param exported - The names the module exports by reference.
- * @returns True when the header needs a blank line after it.
+ * Whether a file header is missing the blank line after it. A header may run straight into code
+ * only when it is JSDoc for that code.
  */
 export function headerFault(
   context: Context,
@@ -125,12 +113,7 @@ export function headerFault(
 }
 
 /**
- * Why a JSDoc-shaped block is an ordinary comment rather than documentation, if it is.
- *
- * @param context - The rule context for the file.
- * @param comment - A comment `isJsdocLike` accepted.
- * @param exported - The names the module exports by reference.
- * @returns Null when the block is JSDoc, otherwise the reason it is not.
+ * Why a JSDoc-shaped block is an ordinary comment, or null when it is documentation.
  */
 export function jsdocFault(
   context: Context,

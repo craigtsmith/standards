@@ -1,13 +1,14 @@
 import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
+import { ruleDocs } from "./lib/rule-meta.ts"
 import {
   classifyUnsafeDictionary,
   classifyUnsafeDictionaryValue,
-  createTypeEnvironment,
-  type TypeEnvironment,
 } from "./lib/types/dictionary-types.ts"
 import { visibleTypeAlias } from "./lib/types/type-alias-resolution.ts"
+import { createTypeEnvironment, type TypeEnvironment } from "./lib/types/type-environment.ts"
+import { typeReferenceName } from "./lib/types/type-syntax.ts"
 
 const typeNodeKinds: ReadonlySet<string> = new Set([
   "JSDocNonNullableType",
@@ -51,10 +52,6 @@ const typeNodeKinds: ReadonlySet<string> = new Set([
 
 function isTypeNode(node: ESTree.Node): node is ESTree.TSType {
   return typeNodeKinds.has(node.type)
-}
-
-function typeReferenceName(type: ESTree.TSTypeReference): string | null {
-  return type.typeName.type === "Identifier" ? type.typeName.name : null
 }
 
 function isInsideTypeAliasDeclaration(node: ESTree.TSType): boolean {
@@ -116,13 +113,13 @@ function shouldReportType(node: ESTree.TSType, environment: TypeEnvironment): bo
 export const noUnsafeDictionaryTypeRule: Rule = defineRule({
   meta: {
     type: "problem",
-    docs: {
-      description:
-        "Disallow object-dictionary contracts whose direct value type is unknown, any, object, {}, or a union/alias containing one of those escape hatches.",
-    },
+    docs: ruleDocs(
+      "no-unsafe-dictionary-type",
+      "Disallow dictionary types whose values are `unknown`, `any`, `object` or `{}`."
+    ),
     messages: {
       unsafeDictionary:
-        "This dictionary's {{value}} value type gives callers no concrete value contract. Use an owner/schema-derived value type; parse external payloads before insertion.",
+        "This dictionary's {{value}} value type says nothing about its values. Use a precise value type and parse input before storing it.",
     },
   },
 

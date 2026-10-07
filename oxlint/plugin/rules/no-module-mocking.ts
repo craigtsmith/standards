@@ -2,6 +2,7 @@ import type { ESTree, Rule, SourceCode } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import { resolveVariable } from "./lib/ast/variables.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
 
 const moduleMockMethods = new Set(["doMock", "mock", "unstable_mockModule"])
 
@@ -60,22 +61,17 @@ function moduleMockCall(sourceCode: SourceCode, callee: ESTree.Expression): bool
 
 export const noModuleMockingRule: Rule = defineRule({
   meta: {
+    docs: ruleDocs("no-module-mocking", "Disallow Vitest and Jest module mocking."),
     type: "problem",
-    docs: {
-      description:
-        "Disallow Vitest and Jest module mocking; tests must replace dependencies through real interfaces.",
-    },
     messages: {
       moduleMock:
-        "Replace module mocking with dependency injection through a real interface, service layer, or faithful test implementation.",
+        "This call replaces a module for every importer. Pass the dependency in through an interface instead.",
     },
   },
 
   createOnce(context) {
     return {
       CallExpression(node) {
-        if (node.callee.type === "Super" || node.callee.type === "V8IntrinsicExpression") return
-
         if (moduleMockCall(context.sourceCode, node.callee)) {
           context.report({ messageId: "moduleMock", node })
         }

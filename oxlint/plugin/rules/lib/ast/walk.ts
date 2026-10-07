@@ -3,11 +3,7 @@ import type { ESTree } from "@oxlint/plugins"
 export type VisitorKeys = Readonly<Record<string, readonly string[]>>
 
 /**
- * Calls a visitor on each direct child node of a node, using the visitor keys for its type.
- *
- * @param node - The node whose children are visited.
- * @param visitorKeys - The child property names per node type.
- * @param visit - The callback invoked with each child node.
+ * Calls `visit` on each direct child of a node, using the visitor keys for its type.
  */
 export function forEachChild(
   node: ESTree.Node,

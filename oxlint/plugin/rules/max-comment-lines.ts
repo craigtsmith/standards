@@ -1,12 +1,9 @@
-import type { Comment, Context, Options, Rule } from "@oxlint/plugins"
+import type { Comment, Context, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import { headerFault, isHeader, isJsdocLike, jsdocFault } from "./lib/ast/doc-blocks.ts"
 import { exportedNames } from "./lib/ast/exported-declarations.ts"
-
-const DEFAULT_MAX = 3
-const DEFAULT_MAX_DOC = 15
-const DEFAULT_MAX_HEADER = 20
+import { ruleDocs, ruleOption } from "./lib/rule-meta.ts"
 
 // One comment as the reader sees it: a block, or a run of adjacent line comments.
 interface CommentSpan {
@@ -22,7 +19,7 @@ interface CommentSpan {
 // What the comment is, which decides the limit it answers to.
 type SpanKind = "comment" | "documentation" | "header"
 
-// Why a block is an ordinary comment rather than documentation, if it is.
+// Why a JSDoc-shaped block is an ordinary comment, or null when it is documentation.
 const commentFault = (
   context: Context,
   comment: Comment,
@@ -79,18 +76,6 @@ function commentRuns(context: Context, spans: readonly CommentSpan[]): CommentSp
   return runs
 }
 
-function configuredLimit(
-  option: Options[number] | undefined,
-  key: string,
-  fallback: number
-): number {
-  if (!(option instanceof Object) || Array.isArray(option)) return fallback
-
-  const limit = Number(option[key])
-
-  return Number.isInteger(limit) && limit > 0 ? limit : fallback
-}
-
 function messageFor(run: CommentSpan): "docTooLong" | "looseJsdoc" | "tooLong" {
   if (run.kind !== "comment") return "docTooLong"
 
@@ -126,17 +111,18 @@ function checkHeader(
 
 export const maxCommentLinesRule: Rule = defineRule({
   meta: {
-    defaultOptions: [{ max: DEFAULT_MAX, maxDoc: DEFAULT_MAX_DOC, maxHeader: DEFAULT_MAX_HEADER }],
+    defaultOptions: [{ max: 3, maxDoc: 15, maxHeader: 20 }],
     type: "suggestion",
-    docs: {
-      description:
-        "Limit a comment to three lines, a documentation block to fifteen and a file header to twenty. Adjacent line comments count as one run, and a single blank line does not break the run. A well-formed JSDoc block on an exported declaration is documentation, and a block on line 1 before any token is the header; any other block is an ordinary comment.",
-    },
+    docs: ruleDocs(
+      "max-comment-lines",
+      "Limit the length of comments, documentation blocks and file headers."
+    ),
     messages: {
-      docTooLong: "This doc block is {{lines}} lines; limit is {{max}}.",
+      docTooLong: "This doc block is {{lines}} lines; the limit is {{max}}.",
       header: "A file header must be followed by a blank line.",
-      looseJsdoc: "This comment (not JSDoc - {{why}}) is {{lines}} lines; limit is {{max}}.",
-      tooLong: "This comment is {{lines}} lines; limit is {{max}}.",
+      tooLong: "This comment is {{lines}} lines; the limit is {{max}}.",
+      looseJsdoc:
+        "This comment is {{lines}} lines; the limit is {{max}}, and it is not JSDoc because it {{why}}.",
     },
     schema: [
       {
@@ -154,11 +140,10 @@ export const maxCommentLinesRule: Rule = defineRule({
   createOnce(context) {
     return {
       Program(node) {
-        const option = context.options[0]
         const limits = {
-          comment: configuredLimit(option, "max", DEFAULT_MAX),
-          documentation: configuredLimit(option, "maxDoc", DEFAULT_MAX_DOC),
-          header: configuredLimit(option, "maxHeader", DEFAULT_MAX_HEADER),
+          comment: Number(ruleOption(context, "max")),
+          documentation: Number(ruleOption(context, "maxDoc")),
+          header: Number(ruleOption(context, "maxHeader")),
         }
         const comments = node.comments.filter((comment) => comment.type !== "Shebang")
         const exported = exportedNames(node)

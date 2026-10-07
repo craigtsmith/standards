@@ -3,11 +3,7 @@ import type { ESTree, SourceCode } from "@oxlint/plugins"
 export type FunctionParameter = ESTree.ParamPattern
 
 /**
- * Reports whether a type is `unknown`, or a union that has `unknown` as a member, looking through
- * parentheses.
- *
- * @param type - The type annotation to inspect.
- * @returns Whether `unknown` appears at the top level of the type.
+ * Whether a type is `unknown`, or a union with `unknown` as a member, looking through parentheses.
  */
 export function containsUnknownType(type: ESTree.TSType): boolean {
   if (type.type === "TSUnknownKeyword") return true
@@ -18,15 +14,12 @@ export function containsUnknownType(type: ESTree.TSType): boolean {
 }
 
 /**
- * Finds the type annotation on a function parameter, looking through parameter properties, rest
- * elements, and default-value patterns to the binding beneath.
- *
- * @param parameter - The parameter pattern to inspect.
- * @returns The annotation, or null or undefined when the parameter has none.
+ * The type annotation on a parameter, looking through parameter properties, rest elements and
+ * defaults to the binding beneath.
  */
 export function functionParameterTypeAnnotation(
   parameter: FunctionParameter
-): ESTree.TSTypeAnnotation | null | undefined {
+): ESTree.TSTypeAnnotation | null {
   if (parameter.type === "TSParameterProperty") {
     return functionParameterTypeAnnotation(parameter.parameter)
   }
@@ -39,16 +32,12 @@ export function functionParameterTypeAnnotation(
     return parameter.typeAnnotation ?? functionParameterTypeAnnotation(parameter.left)
   }
 
-  return parameter.typeAnnotation
+  return parameter.typeAnnotation ?? null
 }
 
 /**
- * Gives the name a function parameter binds, unwrapping parameter properties, defaults, and rest
- * elements. A destructuring pattern yields its source text with any type annotation removed.
- *
- * @param parameter - The parameter pattern to name.
- * @param sourceCode - The source code used to read a pattern's text.
- * @returns The identifier name or the pattern's text.
+ * The name a parameter binds, through parameter properties, defaults and rest elements. A
+ * destructuring pattern yields its source text without the type annotation.
  */
 export function functionParameterBindingName(
   parameter: FunctionParameter,

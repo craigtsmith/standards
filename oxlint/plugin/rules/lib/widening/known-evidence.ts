@@ -1,18 +1,15 @@
 import type { ESTree, SourceCode, Variable } from "@oxlint/plugins"
 
-import { isKnownEvidenceExpression, unwrapExpression } from "../ast/expressions.ts"
+import type { TypeEnvironment } from "../types/type-environment.ts"
+import { unwrapExpression } from "../ast/expressions.ts"
 import {
   functionParameterBindingName,
   functionParameterTypeAnnotation,
 } from "../ast/function-parameters.ts"
 import { isFunctionExpression, localFunctionForCall } from "../ast/local-functions.ts"
-import {
-  isStableConstVariable,
-  resolveVariable,
-  singleDefinition,
-  variableDeclarator,
-} from "../ast/variables.ts"
-import { classifyUnsafeDictionaryValue, type TypeEnvironment } from "../types/dictionary-types.ts"
+import { resolveVariable, singleDefinition, stableConstDeclarator } from "../ast/variables.ts"
+import { classifyUnsafeDictionaryValue } from "../types/dictionary-types.ts"
+import { isKnownValueExpression } from "./syntactic-values.ts"
 
 export interface EvidenceLookup {
   readonly environment: TypeEnvironment
@@ -20,20 +17,15 @@ export interface EvidenceLookup {
 }
 
 /**
- * Reports whether an expression carries a known shape: it is a syntactic value, or a stable `const`
- * identifier whose initialiser is one, followed transitively.
- *
- * @param sourceCode - The file's source, used to resolve identifiers to variables.
- * @param expression - The expression to inspect.
- * @param visitedVariables - Variables already followed, so a cycle stops the walk.
- * @returns Whether the expression's shape is evident from the source.
+ * Whether an expression has a shape the source states: a syntactic value, or a stable `const`
+ * whose initialiser has one, followed transitively.
  */
 export function hasKnownEvidence(
   sourceCode: SourceCode,
   expression: ESTree.Expression,
   visitedVariables: Set<Variable> = new Set()
 ): boolean {
-  if (isKnownEvidenceExpression(expression)) return true
+  if (isKnownValueExpression(expression)) return true
 
   const unwrapped = unwrapExpression(expression)
   if (unwrapped.type !== "Identifier") return false
@@ -41,29 +33,18 @@ export function hasKnownEvidence(
   const variable = resolveVariable(sourceCode, unwrapped)
   if (variable === null || visitedVariables.has(variable)) return false
 
-  const declarator = variableDeclarator(variable)
-  if (
-    declarator === null ||
-    declarator.init === null ||
-    !isStableConstVariable(variable, declarator)
-  ) {
-    return false
-  }
+  const initializer = stableConstDeclarator(variable)?.init ?? null
+  if (initializer === null) return false
 
   visitedVariables.add(variable)
 
-  return hasKnownEvidence(sourceCode, declarator.init, visitedVariables)
+  return hasKnownEvidence(sourceCode, initializer, visitedVariables)
 }
 
 /**
- * Reports whether a call argument's type says more than the `unknown` it is passed into, judged by
- * its assertion, a local callee's return type, its syntactic form, or the annotation or initialiser
- * of the variable it names.
- *
- * @param lookup - The source and type environment used to resolve identifiers and types.
- * @param visitedVariables - Variables already followed, so a cycle stops the walk.
- * @returns Whether the argument brings a known type into the `unknown`
- * parameter.
+ * Whether a call argument's type says more than the `unknown` it is passed into, judged by its
+ * assertion, a local callee's return type, its syntactic form, or the annotation or initialiser of
+ * the variable it names.
  */
 export function hasKnownCallArgumentEvidence(
   lookup: EvidenceLookup,
@@ -77,7 +58,7 @@ export function hasKnownCallArgumentEvidence(
 
   if (unwrapped.type === "CallExpression") return hasInformativeReturn(lookup, unwrapped)
 
-  if (unwrapped.type !== "Identifier") return isKnownEvidenceExpression(unwrapped)
+  if (unwrapped.type !== "Identifier") return isKnownValueExpression(unwrapped)
 
   const variable = resolveVariable(lookup.sourceCode, unwrapped)
   if (variable === null || visitedVariables.has(variable)) return false
@@ -120,7 +101,7 @@ function variableTypeAnnotation(
     (candidate) => functionParameterBindingName(candidate, sourceCode) === variable.name
   )
 
-  return parameter === undefined ? null : (functionParameterTypeAnnotation(parameter) ?? null)
+  return parameter === undefined ? null : functionParameterTypeAnnotation(parameter)
 }
 
 function hasInformativeType(type: ESTree.TSType, environment: TypeEnvironment): boolean {
@@ -142,16 +123,10 @@ function hasKnownVariableEvidence(
   const annotation = variableTypeAnnotation(lookup.sourceCode, variable)
   if (annotation !== null) return hasInformativeType(annotation.typeAnnotation, lookup.environment)
 
-  const declarator = variableDeclarator(variable)
-  if (
-    declarator === null ||
-    declarator.init === null ||
-    !isStableConstVariable(variable, declarator)
-  ) {
-    return false
-  }
+  const initializer = stableConstDeclarator(variable)?.init ?? null
+  if (initializer === null) return false
 
   visitedVariables.add(variable)
 
-  return hasKnownCallArgumentEvidence(lookup, declarator.init, visitedVariables)
+  return hasKnownCallArgumentEvidence(lookup, initializer, visitedVariables)
 }

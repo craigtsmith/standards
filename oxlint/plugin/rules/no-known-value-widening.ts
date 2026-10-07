@@ -1,7 +1,8 @@
 import { defineRule, type Rule } from "@oxlint/plugins"
 
 import { enclosingFunction } from "./lib/ast/local-functions.ts"
-import { createTypeEnvironment } from "./lib/types/dictionary-types.ts"
+import { ruleDocs } from "./lib/rule-meta.ts"
+import { createTypeEnvironment } from "./lib/types/type-environment.ts"
 import { callFlow } from "./lib/widening/call-flow.ts"
 import {
   assertionFlow,
@@ -16,13 +17,13 @@ import {
 export const noKnownValueWideningRule: Rule = defineRule({
   meta: {
     type: "problem",
-    docs: {
-      description:
-        "Disallow syntactically established values from flowing into explicitly broad or anonymous target types that discard useful evidence.",
-    },
+    docs: ruleDocs(
+      "no-known-value-widening",
+      "Disallow annotations and assertions that widen a value whose type is already known."
+    ),
     messages: {
       widening:
-        "The explicit {{target}} type on {{subject}} discards known type evidence. Keep inference, validate with `satisfies`, or use a named owner contract.",
+        "The {{target}} type on {{subject}} hides a type that is already known. Keep the inferred type or check it with `satisfies`.",
     },
   },
 

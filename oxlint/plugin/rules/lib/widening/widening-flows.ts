@@ -1,13 +1,12 @@
 import type { Context, ESTree } from "@oxlint/plugins"
 
+import type { WideningTarget } from "../types/dictionary-values.ts"
+import type { TypeEnvironment } from "../types/type-environment.ts"
+import { isTypeAssertion, type TypeAssertion } from "../ast/assertions.ts"
 import { isEmptyObjectExpression } from "../ast/expressions.ts"
 import { functionName, sourceKeyName, type FunctionExpression } from "../ast/local-functions.ts"
 import { resolveVariable, variableDeclarator } from "../ast/variables.ts"
-import {
-  classifyWideningTarget,
-  type TypeEnvironment,
-  type WideningTarget,
-} from "../types/dictionary-types.ts"
+import { classifyWideningTarget } from "../types/dictionary-types.ts"
 import { hasKnownEvidence } from "./known-evidence.ts"
 
 export interface FileState {
@@ -25,13 +24,8 @@ interface WideningFlow {
   readonly subject: string
 }
 
-type TypeAssertion = ESTree.TSAsExpression | ESTree.TSTypeAssertion
-
 /**
  * Reports a class property whose initialiser has a known shape but whose annotation widens it.
- *
- * @param flow - The rule context and the file's type environment.
- * @param node - The class property or accessor property.
  */
 export function propertyFlow(
   flow: Flow,
@@ -40,18 +34,15 @@ export function propertyFlow(
   if (node.value === null) return
 
   reportFlow(flow, {
-    destination: annotationTarget(flow, node.typeAnnotation),
+    destination: annotationTarget(flow, node.typeAnnotation?.typeAnnotation),
     expression: node.value,
     subject: `property \`${sourceKeyName(flow.context.sourceCode, node.key)}\``,
   })
 }
 
 /**
- * Reports a plain `=` assignment to a local binding whose declared annotation widens a right-hand
- * side of known shape.
- *
- * @param flow - The rule context and the file's type environment.
- * @param node - The assignment expression.
+ * Reports a plain `=` assignment to a local binding whose annotation widens a right-hand side of
+ * known shape.
  */
 export function assignmentFlow(flow: Flow, node: ESTree.AssignmentExpression): void {
   if (node.operator !== "=" || node.left.type !== "Identifier") return
@@ -61,7 +52,7 @@ export function assignmentFlow(flow: Flow, node: ESTree.AssignmentExpression): v
   if (declarator === null || declarator.id.type !== "Identifier") return
 
   reportFlow(flow, {
-    destination: annotationTarget(flow, declarator.id.typeAnnotation),
+    destination: annotationTarget(flow, declarator.id.typeAnnotation?.typeAnnotation),
     expression: node.right,
     subject: `binding \`${declarator.id.name}\``,
   })
@@ -69,27 +60,19 @@ export function assignmentFlow(flow: Flow, node: ESTree.AssignmentExpression): v
 
 /**
  * Reports a variable declarator whose initialiser has a known shape but whose annotation widens it.
- *
- * @param flow - The rule context and the file's type environment.
- * @param node - The variable declarator.
  */
 export function declaratorFlow(flow: Flow, node: ESTree.VariableDeclarator): void {
   if (node.init === null || node.id.type !== "Identifier") return
 
   reportFlow(flow, {
-    destination: annotationTarget(flow, node.id.typeAnnotation),
+    destination: annotationTarget(flow, node.id.typeAnnotation?.typeAnnotation),
     expression: node.init,
     subject: `binding \`${node.id.name}\``,
   })
 }
 
 /**
- * Reports a returned expression of known shape that the enclosing function's return annotation
- * widens.
- *
- * @param flow - The rule context and the file's type environment.
- * @param owner - The function returning the expression, or null when none encloses it.
- * @param expression - The returned expression.
+ * Reports a returned expression of known shape that the enclosing function's return type widens.
  */
 export function returnFlow(
   flow: Flow,
@@ -97,18 +80,15 @@ export function returnFlow(
   expression: ESTree.Expression
 ): void {
   reportFlow(flow, {
-    destination: annotationTarget(flow, owner?.returnType),
+    destination: annotationTarget(flow, owner?.returnType?.typeAnnotation),
     expression,
     subject: `return value of \`${functionName(flow.context.sourceCode, owner)}\``,
   })
 }
 
 /**
- * Reports an `as` or angle-bracket assertion that widens an expression of known shape. The
- * outermost of nested assertions is the one judged.
- *
- * @param flow - The rule context and the file's type environment.
- * @param node - The assertion expression.
+ * Reports an `as` or angle-bracket assertion that widens an expression of known shape. Only the
+ * outermost of nested assertions is judged.
  */
 export function assertionFlow(flow: Flow, node: TypeAssertion): void {
   if (flow.state.environment === null || hasParentAssertion(node)) return
@@ -125,18 +105,13 @@ function isDictionaryAccumulatorTarget(destination: WideningTarget): boolean {
 }
 
 function hasParentAssertion(node: ESTree.Node): boolean {
-  return node.parent?.type === "TSAsExpression" || node.parent?.type === "TSTypeAssertion"
+  return node.parent !== null && isTypeAssertion(node.parent)
 }
 
-function annotationTarget(
-  flow: Flow,
-  annotation: ESTree.TSTypeAnnotation | null | undefined
-): WideningTarget | null {
-  if (flow.state.environment === null || annotation === null || annotation === undefined) {
-    return null
-  }
+function annotationTarget(flow: Flow, type: ESTree.TSType | undefined): WideningTarget | null {
+  if (flow.state.environment === null || type === undefined) return null
 
-  return classifyWideningTarget(annotation.typeAnnotation, flow.state.environment)
+  return classifyWideningTarget(type, flow.state.environment)
 }
 
 function reportFlow(flow: Flow, { destination, expression, subject }: WideningFlow): void {
