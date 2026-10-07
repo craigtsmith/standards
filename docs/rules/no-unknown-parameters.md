@@ -6,6 +6,14 @@ Enabled in the preset: `"error"`.
 
 The rule checks functions, methods, call and construct signatures, function types and `declare function`. It reports `unknown` inside a union such as `unknown | string`, and optional parameters.
 
+## Options
+
+```json
+{ "allowNames": ["cause"] }
+```
+
+- `allowNames`: parameter names that may be typed `unknown`. Each name is a non-empty string and appears once. A list replaces the default, so include `cause` to keep it.
+
 ## Examples
 
 ### Incorrect
@@ -25,7 +33,7 @@ function save(value: Input) {}
 
 ## Exceptions
 
-- A parameter named `cause`, which carries an error cause.
+- A parameter named in `allowNames`. The default, `cause`, carries an error cause.
 - The subject of a type predicate. Other `unknown` parameters of the same function are still reported.
 
 ```ts

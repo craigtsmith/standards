@@ -13,7 +13,7 @@ These rules come from the `standards` JS plugin, which `@craigts.dev/standards/o
 | [`no-reflect-apply`](no-reflect-apply.md)                                                   | `Reflect.apply`                                                     | error                            | no      |
 | [`no-reflect-get`](no-reflect-get.md)                                                       | `Reflect.get`                                                       | error                            | no      |
 | [`no-runtime-typeof`](no-runtime-typeof.md)                                                 | The runtime `typeof` operator                                       | error, `allowInTypeGuards: true` | yes     |
-| [`no-unknown-parameters`](no-unknown-parameters.md)                                         | A parameter typed `unknown`                                         | error                            | no      |
+| [`no-unknown-parameters`](no-unknown-parameters.md)                                         | A parameter typed `unknown`                                         | error                            | yes     |
 | [`no-unknown-returns`](no-unknown-returns.md)                                               | A return type of `unknown` or `Promise<unknown>`                    | error                            | no      |
 | [`no-unknown-type-aliases`](no-unknown-type-aliases.md)                                     | A type alias that resolves to `unknown`                             | error                            | no      |
 | [`no-unsafe-dictionary-type`](no-unsafe-dictionary-type.md)                                 | A dictionary whose value type is `unknown`, `any`, `object` or `{}` | error                            | no      |
