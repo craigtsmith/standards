@@ -4,13 +4,12 @@ import { defineRule } from "@oxlint/plugins"
 import type { TypeAssertion } from "./lib/ast/assertions.ts"
 import { resolveVariable, stableConstDeclarator } from "./lib/ast/variables.ts"
 import { ruleDocs } from "./lib/rule-meta.ts"
+import { broadTypeKind, type BroadTypeKind } from "./lib/types/broad-types.ts"
 import {
-  broadTypeKind,
   isDefinitelyNarrowerRecordType,
   isDefinitelyObjectType,
   typesHaveSameSyntax,
-  type BroadTypeKind,
-} from "./lib/types/broad-types.ts"
+} from "./lib/types/narrower-types.ts"
 import {
   assertedExpression,
   assertionFromExpression,

@@ -9,6 +9,13 @@ export interface AliasArgument {
 /**
  * The plain identifier a type reference names, or null for a qualified name.
  */
+// Key types that admit any property name.
+export const BROAD_KEY_KEYWORDS: ReadonlySet<string> = new Set([
+  "TSNumberKeyword",
+  "TSStringKeyword",
+  "TSSymbolKeyword",
+])
+
 export function typeReferenceName(type: ESTree.TSTypeReference): string | null {
   return type.typeName.type === "Identifier" ? type.typeName.name : null
 }
@@ -46,6 +53,20 @@ export function aliasArguments(
   const pairs = parameters.flatMap((parameter, index) => aliasArgument(parameter, supplied[index]))
 
   return pairs.length === parameters.length ? pairs : null
+}
+
+export function unwrapTypeParentheses(type: ESTree.TSType): ESTree.TSType {
+  let current = type
+
+  while (current.type === "TSParenthesizedType") current = current.typeAnnotation
+
+  return current
+}
+
+export function isUnknownOrAnyType(type: ESTree.TSType): boolean {
+  const unwrapped = unwrapTypeParentheses(type)
+
+  return unwrapped.type === "TSUnknownKeyword" || unwrapped.type === "TSAnyKeyword"
 }
 
 // An empty list when the parameter has neither an argument nor a default.

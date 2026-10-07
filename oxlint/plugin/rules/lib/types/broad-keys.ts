@@ -1,9 +1,8 @@
 import type { ESTree } from "@oxlint/plugins"
 
 import type { Resolution } from "./resolution.ts"
-import { BROAD_KEY_KEYWORDS } from "./broad-types.ts"
 import { resolveReference } from "./type-references.ts"
-import { unwrapTransparentType } from "./type-syntax.ts"
+import { BROAD_KEY_KEYWORDS, unwrapTransparentType } from "./type-syntax.ts"
 
 /**
  * Whether a mapped-type key admits arbitrary names: `string`, `number` or `symbol`, a union holding
