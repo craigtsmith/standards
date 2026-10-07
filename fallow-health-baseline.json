@@ -20,14 +20,6 @@
         "count": 1
       }
     },
-    "oxlint/plugin/rules/lib/types/broad-keys.ts": {
-      "complexity_moderate": {
-        "count": 1
-      },
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "oxlint/plugin/rules/lib/types/broad-types.ts": {
       "complexity_moderate": {
         "count": 2
@@ -53,11 +45,6 @@
         "count": 1
       },
       "crap_moderate": {
-        "count": 1
-      }
-    },
-    "oxlint/plugin/rules/lib/types/type-references.ts": {
-      "complexity_moderate": {
         "count": 1
       }
     },
@@ -91,7 +78,7 @@
     },
     "oxlint/plugin/rules/max-comment-lines.ts": {
       "complexity_moderate": {
-        "count": 4
+        "count": 1
       }
     },
     "oxlint/plugin/rules/no-module-mocking.ts": {
@@ -156,14 +143,6 @@
         "count": 1
       }
     },
-    "oxlint/plugin/rules/lib/types/broad-keys.ts\u0000isBroadKeyReference": {
-      "complexity_moderate": {
-        "count": 1
-      },
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "oxlint/plugin/rules/lib/types/broad-types.ts\u0000isDefinitelyNarrowerRecordType": {
       "complexity_moderate": {
         "count": 1
@@ -199,11 +178,6 @@
         "count": 1
       },
       "crap_moderate": {
-        "count": 1
-      }
-    },
-    "oxlint/plugin/rules/lib/types/type-references.ts\u0000builtInTarget": {
-      "complexity_moderate": {
         "count": 1
       }
     },
@@ -245,22 +219,7 @@
         "count": 1
       }
     },
-    "oxlint/plugin/rules/max-comment-lines.ts\u0000Program": {
-      "complexity_moderate": {
-        "count": 1
-      }
-    },
     "oxlint/plugin/rules/max-comment-lines.ts\u0000commentRuns": {
-      "complexity_moderate": {
-        "count": 1
-      }
-    },
-    "oxlint/plugin/rules/max-comment-lines.ts\u0000documentsSomething": {
-      "complexity_moderate": {
-        "count": 1
-      }
-    },
-    "oxlint/plugin/rules/max-comment-lines.ts\u0000malformed": {
       "complexity_moderate": {
         "count": 1
       }
@@ -297,5 +256,5 @@
     }
   },
   "runtime_coverage_findings": [],
-  "target_keys": ["oxlint/config/rules/perfectionist/sort-modules.probe.ts:dead code"]
+  "target_keys": ["oxlint/plugin/rules/lib/types/broad-types.ts:high impact"]
 }
