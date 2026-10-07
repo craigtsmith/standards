@@ -69,5 +69,7 @@ ruleTester.run("no-unsafe-dictionary-type", noUnsafeDictionaryTypeRule, {
     "type Pair<A, B> = Record<string, B>; type Flip<A> = Pair<unknown, A>",
     // A type parameter cannot take type arguments, so `T<number>` is not `T`.
     "type Values<T> = Record<string, T<number>>; type Bag = Values<unknown>",
+    // A mapped type's key shadows the alias parameter of the same name.
+    "type Keyed<K> = { [K in Id]: K }; type Bag = Keyed<unknown>",
   ],
 })

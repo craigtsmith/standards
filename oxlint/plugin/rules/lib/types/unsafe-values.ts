@@ -18,22 +18,27 @@ const keywordValues: ReadonlyMap<string, UnsafeValue> = new Map([
  */
 export function unsafeDirectValue(type: ESTree.TSType, resolution: Resolution): UnsafeValue | null {
   const unwrapped = unwrapTransparentType(type)
-  const keyword = keywordValues.get(unwrapped.type)
-  if (keyword !== undefined) return keyword
 
-  if (unwrapped.type === "TSTypeLiteral") {
-    return isEffectivelyEmptyTypeLiteral(unwrapped) ? "empty-object" : null
+  return keywordValues.get(unwrapped.type) ?? unsafeCompositeValue(unwrapped, resolution)
+}
+
+function unsafeCompositeValue(type: ESTree.TSType, resolution: Resolution): UnsafeValue | null {
+  switch (type.type) {
+    case "TSIntersectionType":
+      return unsafeIntersection(type.types, resolution)
+    case "TSTypeLiteral":
+      return unsafeTypeLiteral(type)
+    case "TSTypeReference":
+      return unsafeReference(resolveReference(type, resolution))
+    case "TSUnionType":
+      return unsafeUnion(type.types, resolution)
+    default:
+      return null
   }
+}
 
-  if (unwrapped.type === "TSUnionType") return unsafeUnion(unwrapped.types, resolution)
-
-  if (unwrapped.type === "TSIntersectionType") {
-    return unsafeIntersection(unwrapped.types, resolution)
-  }
-
-  if (unwrapped.type !== "TSTypeReference") return null
-
-  return unsafeReference(resolveReference(unwrapped, resolution))
+function unsafeTypeLiteral(literal: ESTree.TSTypeLiteral): UnsafeValue | null {
+  return isEffectivelyEmptyTypeLiteral(literal) ? "empty-object" : null
 }
 
 function isNeverType(type: ESTree.TSType): boolean {

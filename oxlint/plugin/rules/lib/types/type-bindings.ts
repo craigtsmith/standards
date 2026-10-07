@@ -85,27 +85,35 @@ function enclosingTypeScope(node: ESTree.Node): ESTree.Node {
 }
 
 function declaredTypeBinding(node: ESTree.Node): DeclaredBinding | null {
-  if (node.type === "TSTypeAliasDeclaration" || node.type === "TSInterfaceDeclaration") {
-    return { declaration: node, name: node.id.name }
-  }
+  return declarationBinding(node) ?? namedValueBinding(node) ?? importBinding(node)
+}
 
+// An alias or interface, which the resolver can look inside.
+function declarationBinding(node: ESTree.Node): DeclaredBinding | null {
+  return node.type === "TSTypeAliasDeclaration" || node.type === "TSInterfaceDeclaration"
+    ? { declaration: node, name: node.id.name }
+    : null
+}
+
+// An enum or class, which may be anonymous.
+function namedValueBinding(node: ESTree.Node): DeclaredBinding | null {
   if (
-    node.type === "TSEnumDeclaration" ||
-    node.type === "ClassDeclaration" ||
-    node.type === "ClassExpression"
+    node.type !== "TSEnumDeclaration" &&
+    node.type !== "ClassDeclaration" &&
+    node.type !== "ClassExpression"
   ) {
-    return node.id === null ? null : { declaration: null, name: node.id.name }
+    return null
   }
 
-  if (
-    node.type === "ImportSpecifier" ||
+  return node.id === null ? null : { declaration: null, name: node.id.name }
+}
+
+function importBinding(node: ESTree.Node): DeclaredBinding | null {
+  return node.type === "ImportSpecifier" ||
     node.type === "ImportDefaultSpecifier" ||
     node.type === "ImportNamespaceSpecifier"
-  ) {
-    return { declaration: null, name: node.local.name }
-  }
-
-  return null
+    ? { declaration: null, name: node.local.name }
+    : null
 }
 
 function ancestorDistance(ancestor: ESTree.Node, node: ESTree.Node): number | null {

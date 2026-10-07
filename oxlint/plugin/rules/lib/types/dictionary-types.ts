@@ -5,6 +5,7 @@ import { hasBroadRecordKey } from "./broad-keys.ts"
 import {
   classifyAliasBroadTarget,
   dictionaryValueTypes,
+  keywordWideningTarget,
   type WideningTarget,
 } from "./dictionary-values.ts"
 import { topLevelResolution } from "./resolution.ts"
@@ -57,20 +58,27 @@ export function classifyWideningTarget(
   environment: TypeEnvironment
 ): WideningTarget | null {
   const unwrapped = unwrapTransparentType(type)
-  if (unwrapped.type === "TSUnknownKeyword") return { kind: "unknown" }
 
-  if (unwrapped.type === "TSObjectKeyword") return { kind: "object" }
+  return keywordWideningTarget(unwrapped) ?? compositeWideningTarget(unwrapped, environment)
+}
 
-  if (unwrapped.type === "TSTypeLiteral") return literalTarget(unwrapped)
-
-  if (unwrapped.type === "TSMappedType") return { kind: "open dictionary" }
-
-  if (unwrapped.type !== "TSTypeReference") return null
-
-  return referenceWideningTarget(
-    resolveReference(unwrapped, topLevelResolution(environment)),
-    environment
-  )
+function compositeWideningTarget(
+  type: ESTree.TSType,
+  environment: TypeEnvironment
+): WideningTarget | null {
+  switch (type.type) {
+    case "TSMappedType":
+      return { kind: "open dictionary" }
+    case "TSTypeLiteral":
+      return literalTarget(type)
+    case "TSTypeReference":
+      return referenceWideningTarget(
+        resolveReference(type, topLevelResolution(environment)),
+        environment
+      )
+    default:
+      return null
+  }
 }
 
 function unsafeDictionary(unsafeValue: UnsafeValue | null): UnsafeDictionary | null {

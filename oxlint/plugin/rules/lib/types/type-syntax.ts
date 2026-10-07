@@ -43,15 +43,17 @@ export function aliasArguments(
 ): readonly AliasArgument[] | null {
   const parameters = alias.typeParameters?.params ?? []
   const supplied = reference.typeArguments?.params ?? []
-  const pairs: AliasArgument[] = []
+  const pairs = parameters.flatMap((parameter, index) => aliasArgument(parameter, supplied[index]))
 
-  for (const [index, parameter] of parameters.entries()) {
-    const explicit = supplied[index]
-    const argument = explicit ?? parameter.default
-    if (argument === null) return null
+  return pairs.length === parameters.length ? pairs : null
+}
 
-    pairs.push({ argument, explicit: explicit !== undefined, parameter })
-  }
+// An empty list when the parameter has neither an argument nor a default.
+function aliasArgument(
+  parameter: ESTree.TSTypeParameter,
+  explicit: ESTree.TSType | undefined
+): AliasArgument[] {
+  const argument = explicit ?? parameter.default
 
-  return pairs
+  return argument === null ? [] : [{ argument, explicit: explicit !== undefined, parameter }]
 }

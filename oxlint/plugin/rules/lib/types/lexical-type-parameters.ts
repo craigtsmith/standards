@@ -2,6 +2,13 @@ import type { ESTree } from "@oxlint/plugins"
 
 import { forEachChild, type VisitorKeys } from "../ast/walk.ts"
 
+// A node on the way up from a use site, with the type parameter names it puts
+// in scope there.
+interface BinderScope {
+  readonly binder: ESTree.Node
+  readonly names: readonly string[]
+}
+
 /**
  * Every type parameter name in scope at a node, from enclosing declarations, mapped-type keys and
  * `infer` bindings. A type parameter shadows a module alias of the same name.
@@ -10,18 +17,35 @@ export function lexicalTypeParameterNames(
   node: ESTree.Node,
   visitorKeys: VisitorKeys
 ): ReadonlySet<string> {
-  const names = new Set<string>()
+  return new Set(binderScopes(node, visitorKeys).flatMap(({ names }) => names))
+}
+
+/**
+ * The closest node that binds a type parameter name at a node, or null when nothing binds it.
+ */
+export function nearestTypeParameterBinder(
+  name: string,
+  node: ESTree.Node,
+  visitorKeys: VisitorKeys
+): ESTree.Node | null {
+  const scope = binderScopes(node, visitorKeys).find(({ names }) => names.includes(name))
+
+  return scope?.binder ?? null
+}
+
+function binderScopes(node: ESTree.Node, visitorKeys: VisitorKeys): BinderScope[] {
+  const scopes: BinderScope[] = []
   let descendant: ESTree.Node = node
   let current: ESTree.Node = node
 
   while (current.type !== "Program") {
-    for (const name of boundNames(current, descendant, visitorKeys)) names.add(name)
+    scopes.push({ binder: current, names: boundNames(current, descendant, visitorKeys) })
 
     descendant = current
     current = current.parent
   }
 
-  return names
+  return scopes
 }
 
 function typeParameterNames(node: ESTree.Node): string[] {
@@ -43,23 +67,32 @@ function inferTypeParameterNames(type: ESTree.TSType, visitorKeys: VisitorKeys):
   return names
 }
 
+// A mapped type's key is in scope in its `as` clause and its template only.
+function mappedKeyNames(node: ESTree.Node, descendant: ESTree.Node): string[] {
+  if (node.type !== "TSMappedType") return []
+
+  return descendant === node.nameType || descendant === node.typeAnnotation ? [node.key.name] : []
+}
+
+// `infer` bindings are in scope in the true branch only.
+function conditionalInferNames(
+  node: ESTree.Node,
+  descendant: ESTree.Node,
+  visitorKeys: VisitorKeys
+): string[] {
+  if (node.type !== "TSConditionalType" || descendant !== node.trueType) return []
+
+  return inferTypeParameterNames(node.extendsType, visitorKeys)
+}
+
 function boundNames(
   node: ESTree.Node,
   descendant: ESTree.Node,
   visitorKeys: VisitorKeys
 ): string[] {
-  const names = typeParameterNames(node)
-
-  if (
-    node.type === "TSMappedType" &&
-    (descendant === node.nameType || descendant === node.typeAnnotation)
-  ) {
-    names.push(node.key.name)
-  }
-
-  if (node.type === "TSConditionalType" && descendant === node.trueType) {
-    names.push(...inferTypeParameterNames(node.extendsType, visitorKeys))
-  }
-
-  return names
+  return [
+    ...typeParameterNames(node),
+    ...mappedKeyNames(node, descendant),
+    ...conditionalInferNames(node, descendant, visitorKeys),
+  ]
 }

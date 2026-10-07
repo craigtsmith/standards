@@ -1,6 +1,7 @@
 import type { ESTree } from "@oxlint/plugins"
 
 import type { TypeBinding } from "./type-bindings.ts"
+import { nearestTypeParameterBinder } from "./lexical-type-parameters.ts"
 import {
   expandAlias,
   substitutedType,
@@ -85,8 +86,21 @@ function substitutionTarget(
   if ((reference.typeArguments?.params.length ?? 0) > 0) return null
 
   const substituted = substitutedType(name, resolution)
+  if (substituted === null || !bindsAliasParameter(name, reference, resolution)) return null
 
-  return substituted === null ? null : { ...substituted, kind: "substitution" }
+  return { ...substituted, kind: "substitution" }
+}
+
+// Substitutions belong to the alias being expanded, so a closer binder of the
+// same name, such as `<T>() => T` or `infer T`, shadows them.
+function bindsAliasParameter(
+  name: string,
+  reference: ESTree.TSTypeReference,
+  resolution: Resolution
+): boolean {
+  const binder = nearestTypeParameterBinder(name, reference, resolution.environment.visitorKeys)
+
+  return binder?.type === "TSTypeAliasDeclaration"
 }
 
 function bindingTarget(

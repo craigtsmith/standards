@@ -18,6 +18,11 @@ export type WideningTargetKind =
 
 const OPEN_DICTIONARY: WideningTarget = { kind: "open dictionary" }
 
+const KEYWORD_TARGETS: ReadonlyMap<string, WideningTarget> = new Map([
+  ["TSObjectKeyword", { kind: "object" }],
+  ["TSUnknownKeyword", { kind: "unknown" }],
+])
+
 /**
  * The value types a dictionary holds, each with the resolution it is read under: its index
  * signatures, a mapped type's template, or the value reached through an alias, `Record` or `Pick`.
@@ -27,15 +32,17 @@ export function dictionaryValueTypes(
   resolution: Resolution
 ): readonly ResolvedType[] {
   const unwrapped = unwrapTransparentType(type)
-  if (unwrapped.type === "TSTypeLiteral") return indexSignatureValues(unwrapped, resolution)
 
-  if (unwrapped.type === "TSMappedType") {
-    return unwrapped.typeAnnotation === null ? [] : [{ resolution, type: unwrapped.typeAnnotation }]
+  switch (unwrapped.type) {
+    case "TSMappedType":
+      return mappedTemplateValues(unwrapped, resolution)
+    case "TSTypeLiteral":
+      return indexSignatureValues(unwrapped, resolution)
+    case "TSTypeReference":
+      return referenceValueTypes(resolveReference(unwrapped, resolution))
+    default:
+      return []
   }
-
-  if (unwrapped.type !== "TSTypeReference") return []
-
-  return referenceValueTypes(resolveReference(unwrapped, resolution))
 }
 
 /**
@@ -47,25 +54,45 @@ export function classifyAliasBroadTarget(
   resolution: Resolution
 ): WideningTarget | null {
   const unwrapped = unwrapTransparentType(type)
-  if (unwrapped.type === "TSUnknownKeyword") return { kind: "unknown" }
 
-  if (unwrapped.type === "TSObjectKeyword") return { kind: "object" }
+  return keywordWideningTarget(unwrapped) ?? compositeBroadTarget(unwrapped, resolution)
+}
 
-  if (unwrapped.type === "TSTypeLiteral") {
-    return unwrapped.members.some((member) => member.type === "TSIndexSignature")
-      ? OPEN_DICTIONARY
-      : null
+/**
+ * The widening target the `unknown` and `object` keywords stand for, or null for any other type.
+ */
+export function keywordWideningTarget(type: ESTree.TSType): WideningTarget | null {
+  return KEYWORD_TARGETS.get(type.type) ?? null
+}
+
+function compositeBroadTarget(type: ESTree.TSType, resolution: Resolution): WideningTarget | null {
+  switch (type.type) {
+    case "TSMappedType":
+      return openDictionaryWhen(
+        isBroadMappedKey(type.constraint, { ...resolution, resolving: new Set() })
+      )
+    case "TSTypeLiteral":
+      return openDictionaryWhen(hasIndexSignature(type))
+    case "TSTypeReference":
+      return broadReferenceTarget(resolveReference(type, resolution))
+    default:
+      return null
   }
+}
 
-  if (unwrapped.type === "TSMappedType") {
-    return isBroadMappedKey(unwrapped.constraint, { ...resolution, resolving: new Set() })
-      ? OPEN_DICTIONARY
-      : null
-  }
+function openDictionaryWhen(open: boolean): WideningTarget | null {
+  return open ? OPEN_DICTIONARY : null
+}
 
-  if (unwrapped.type !== "TSTypeReference") return null
+function hasIndexSignature(literal: ESTree.TSTypeLiteral): boolean {
+  return literal.members.some((member) => member.type === "TSIndexSignature")
+}
 
-  return broadReferenceTarget(resolveReference(unwrapped, resolution))
+function mappedTemplateValues(
+  mapped: ESTree.TSMappedType,
+  resolution: Resolution
+): readonly ResolvedType[] {
+  return mapped.typeAnnotation === null ? [] : [{ resolution, type: mapped.typeAnnotation }]
 }
 
 function indexSignatureValues(

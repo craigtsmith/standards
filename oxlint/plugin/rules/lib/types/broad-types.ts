@@ -11,6 +11,16 @@ export const BROAD_KEY_KEYWORDS: ReadonlySet<string> = new Set([
   "TSSymbolKeyword",
 ])
 
+// Types that are objects whatever their contents.
+const OBJECT_TYPES: ReadonlySet<string> = new Set([
+  "TSArrayType",
+  "TSConstructorType",
+  "TSFunctionType",
+  "TSMappedType",
+  "TSObjectKeyword",
+  "TSTupleType",
+])
+
 /**
  * Classifies a type that widens a value: `unknown` or `any` is `top`, the `object` keyword is
  * `object`, and a `Record` or index signature with an `unknown` value is `record`.
@@ -46,23 +56,7 @@ export function typesHaveSameSyntax(
 export function isDefinitelyObjectType(type: ESTree.TSType): boolean {
   const unwrapped = unwrapTypeParentheses(type)
 
-  switch (unwrapped.type) {
-    case "TSArrayType":
-    case "TSConstructorType":
-    case "TSFunctionType":
-    case "TSMappedType":
-    case "TSObjectKeyword":
-    case "TSTupleType":
-      return true
-    case "TSTypeLiteral":
-      return unwrapped.members.length > 0
-    case "TSIntersectionType":
-      return unwrapped.types.every(isDefinitelyObjectType)
-    case "TSTypeOperator":
-      return unwrapped.operator === "readonly" && isDefinitelyObjectType(unwrapped.typeAnnotation)
-    default:
-      return false
-  }
+  return OBJECT_TYPES.has(unwrapped.type) || isCompositeObjectType(unwrapped)
 }
 
 /**
@@ -71,14 +65,32 @@ export function isDefinitelyObjectType(type: ESTree.TSType): boolean {
  */
 export function isDefinitelyNarrowerRecordType(type: ESTree.TSType): boolean {
   const unwrapped = unwrapTypeParentheses(type)
-  if (unwrapped.type === "TSTypeLiteral") {
-    return unwrapped.members.some((member) => member.type !== "TSIndexSignature")
+  if (unwrapped.type === "TSTypeLiteral") return hasNamedMember(unwrapped)
+
+  return unwrapped.type === "TSTypeReference" && isNarrowerRecordReference(unwrapped)
+}
+
+// Types that are objects when their parts are.
+function isCompositeObjectType(type: ESTree.TSType): boolean {
+  switch (type.type) {
+    case "TSIntersectionType":
+      return type.types.every(isDefinitelyObjectType)
+    case "TSTypeLiteral":
+      return type.members.length > 0
+    case "TSTypeOperator":
+      return type.operator === "readonly" && isDefinitelyObjectType(type.typeAnnotation)
+    default:
+      return false
   }
+}
 
-  if (unwrapped.type !== "TSTypeReference") return false
+function hasNamedMember(literal: ESTree.TSTypeLiteral): boolean {
+  return literal.members.some((member) => member.type !== "TSIndexSignature")
+}
 
-  const name = typeReferenceName(unwrapped)
-  const [first, second] = unwrapped.typeArguments?.params ?? []
+function isNarrowerRecordReference(reference: ESTree.TSTypeReference): boolean {
+  const name = typeReferenceName(reference)
+  const [first, second] = reference.typeArguments?.params ?? []
   if (name === "Readonly") return first !== undefined && isDefinitelyNarrowerRecordType(first)
 
   return name === "Record" && second !== undefined && !isUnknownOrAnyType(second)
