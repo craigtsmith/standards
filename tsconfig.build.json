@@ -5,7 +5,12 @@
     "./tsconfig/tsc.json",
     "./tsconfig/library.json"
   ],
-  "compilerOptions": { "rootDir": ".", "outDir": "dist" },
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "sourceMap": false,
+    "declarationMap": false
+  },
   "include": ["oxlint", "oxfmt"],
   "exclude": ["**/*.test.ts", "**/*.probe.ts", "oxlint/plugin/rules/rule-tester.ts"]
 }
