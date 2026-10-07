@@ -2,15 +2,12 @@
   "$schema": "./node_modules/fallow/schema.json",
   "extends": ["./fallow/preset.jsonc"],
   "ignorePatterns": ["dist/**"],
-  // The oxlint preset loads these through import.meta.resolve.
   "ignoreDependencies": [
     "eslint-plugin-jsdoc",
     "eslint-plugin-perfectionist",
     "eslint-plugin-sonarjs"
   ],
   "audit": { "healthBaseline": "fallow-health-baseline.json" },
-  // package.json exports point at dist, so the source entries are named here.
-  // The probes are lint fixtures: oxlint reads them, nothing imports them.
   "entry": [
     "oxfmt.config.ts",
     "oxfmt/index.ts",
@@ -21,7 +18,6 @@
   ],
   "boundaries": {
     "coverage": { "allowUnmatched": ["*.config.ts"] },
-    // Declared narrow to wide: an earlier zone wins where patterns overlap.
     "zones": [
       { "name": "plugin/ast", "patterns": ["oxlint/plugin/rules/lib/ast/**"] },
       { "name": "plugin/types", "patterns": ["oxlint/plugin/rules/lib/types/**"] },
