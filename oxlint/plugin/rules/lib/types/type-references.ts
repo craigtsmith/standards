@@ -1,68 +1,48 @@
 import type { ESTree } from "@oxlint/plugins"
 
-import type { TypeEnvironment } from "./type-environment.ts"
-import { aliasSubstitution, type Resolution } from "./resolution.ts"
-import { hasVisibleTypeBinding, visibleTypeAlias } from "./type-alias-resolution.ts"
-import { typeArgumentAt, typeReferenceName, unwrapTransparentType } from "./type-syntax.ts"
-
-export { topLevelResolution, type Resolution } from "./resolution.ts"
-
-const BUILT_INS = new Set([
-  "NonNullable",
-  "Omit",
-  "Partial",
-  "Pick",
-  "PropertyKey",
-  "Readonly",
-  "Record",
-  "Required",
-])
-const TRANSPARENT_WRAPPERS = new Set(["NonNullable", "Partial", "Readonly", "Required"])
+import type { TypeBinding } from "./type-bindings.ts"
+import {
+  expandAlias,
+  substitutedType,
+  topLevelResolution,
+  type Resolution,
+  type ResolvedType,
+} from "./resolution.ts"
+import { visibleTypeBindings, type TypeEnvironment } from "./type-environment.ts"
+import { typeArgumentAt, typeReferenceName } from "./type-syntax.ts"
 
 export type ReferenceTarget =
-  | {
-      readonly generic: boolean
-      readonly kind: "alias"
-      readonly resolution: Resolution
-      readonly type: ESTree.TSType
-    }
+  | (ResolvedType & { readonly generic: boolean; readonly kind: "alias" })
+  | (ResolvedType & { readonly kind: "pick" | "substitution" | "wrapped" })
   | { readonly declarations: readonly ESTree.TSInterfaceDeclaration[]; readonly kind: "interface" }
+  | { readonly kind: "propertyKey" }
   | {
       readonly key: ESTree.TSType | null
       readonly kind: "record"
+      readonly resolution: Resolution
       readonly value: ESTree.TSType | null
     }
-  | { readonly kind: "pick"; readonly source: ESTree.TSType }
-  | { readonly kind: "propertyKey" }
-  | { readonly kind: "substitution"; readonly type: ESTree.TSType }
-  | { readonly kind: "unapplied" }
-  | { readonly kind: "wrapped"; readonly type: ESTree.TSType }
+
+export type ResolvedTypeMatcher = (
+  type: ESTree.TSType,
+  matches: (child: ESTree.TSType) => boolean
+) => boolean
+
+// Utility types whose first argument holds the values: `pick` keeps some of its
+// keys, `wrapped` keeps them all.
+const UTILITY_KINDS: ReadonlyMap<string, "pick" | "wrapped"> = new Map([
+  ["NonNullable", "wrapped"],
+  ["Omit", "pick"],
+  ["Partial", "wrapped"],
+  ["Pick", "pick"],
+  ["Readonly", "wrapped"],
+  ["Required", "wrapped"],
+])
 
 /**
- * Whether a name refers to one of the TypeScript utility types this module understands, with no
- * local binding shadowing it.
- */
-export function isBuiltIn(name: string, use: ESTree.Node, environment: TypeEnvironment): boolean {
-  return BUILT_INS.has(name) && !hasVisibleTypeBinding(name, use, environment.typeAliases)
-}
-
-/**
- * Whether a type is a bare reference to `name` with no type arguments, which marks a substitution
- * that maps a parameter to itself.
- */
-export function isUnappliedReferenceTo(type: ESTree.TSType, name: string): boolean {
-  const unwrapped = unwrapTransparentType(type)
-
-  return (
-    unwrapped.type === "TSTypeReference" &&
-    typeReferenceName(unwrapped) === name &&
-    (unwrapped.typeArguments === null || unwrapped.typeArguments.params.length === 0)
-  )
-}
-
-/**
- * Resolves a type reference one step: a substituted parameter, a built-in utility type, a local
- * interface, or an alias with its arguments bound. Null when it is unknown or a cycle.
+ * Resolves a type reference one step: a substituted parameter, an unshadowed built-in utility
+ * type, a visible interface, or a visible alias with its arguments bound. Null when the name is
+ * unknown, a type parameter with nothing bound, or a cycle.
  */
 export function resolveReference(
   reference: ESTree.TSTypeReference,
@@ -71,60 +51,101 @@ export function resolveReference(
   const name = typeReferenceName(reference)
   if (name === null) return null
 
-  const substitution = resolution.substitutions.get(name)
-  if (substitution !== undefined) return substitutionTarget(substitution, name)
-
-  const builtIn = builtInTarget(name, reference, resolution.environment)
-  if (builtIn !== null) return builtIn
-
-  const declarations = resolution.environment.interfaces.get(name)
-  if (declarations !== undefined) return { declarations, kind: "interface" }
-
-  return aliasTarget(name, reference, resolution)
+  return (
+    substitutionTarget(name, reference, resolution) ?? bindingTarget(name, reference, resolution)
+  )
 }
 
-function substitutionTarget(type: ESTree.TSType, name: string): ReferenceTarget {
-  return isUnappliedReferenceTo(type, name) ? { kind: "unapplied" } : { kind: "substitution", type }
+/**
+ * Tests a type against a matcher after following aliases and type parameters to what they stand
+ * for. The matcher gets a callback that tests a child type the same way.
+ */
+export function resolvedTypeMatches(
+  type: ESTree.TSType,
+  environment: TypeEnvironment,
+  matcher: ResolvedTypeMatcher
+): boolean {
+  const evaluate = ({ resolution, type: current }: ResolvedType): boolean => {
+    const target = current.type === "TSTypeReference" ? resolveReference(current, resolution) : null
+    if (target?.kind === "alias" || target?.kind === "substitution") return evaluate(target)
+
+    return matcher(current, (child) => evaluate({ resolution, type: child }))
+  }
+
+  return evaluate({ resolution: topLevelResolution(environment), type })
+}
+
+// A type parameter cannot take type arguments, so `T<X>` is never a
+// substitution for `T`.
+function substitutionTarget(
+  name: string,
+  reference: ESTree.TSTypeReference,
+  resolution: Resolution
+): ReferenceTarget | null {
+  if ((reference.typeArguments?.params.length ?? 0) > 0) return null
+
+  const substituted = substitutedType(name, resolution)
+
+  return substituted === null ? null : { ...substituted, kind: "substitution" }
+}
+
+function bindingTarget(
+  name: string,
+  reference: ESTree.TSTypeReference,
+  resolution: Resolution
+): ReferenceTarget | null {
+  const bindings = visibleTypeBindings(name, reference, resolution.environment)
+  if (bindings === null) return null
+
+  return bindings.length === 0
+    ? builtInTarget(name, reference, resolution)
+    : declaredTarget(bindings, reference, resolution)
 }
 
 function builtInTarget(
   name: string,
   reference: ESTree.TSTypeReference,
-  environment: TypeEnvironment
+  resolution: Resolution
 ): ReferenceTarget | null {
-  if (!isBuiltIn(name, reference, environment)) return null
-
-  const first = typeArgumentAt(reference, 0)
-  if (TRANSPARENT_WRAPPERS.has(name)) {
-    return first === null ? null : { kind: "wrapped", type: first }
-  }
-
-  if (name === "Record") return { key: first, kind: "record", value: typeArgumentAt(reference, 1) }
-
   if (name === "PropertyKey") return { kind: "propertyKey" }
 
-  return first === null ? null : { kind: "pick", source: first }
+  const first = typeArgumentAt(reference, 0)
+  if (name === "Record") {
+    return { key: first, kind: "record", resolution, value: typeArgumentAt(reference, 1) }
+  }
+
+  const kind = UTILITY_KINDS.get(name)
+
+  return kind === undefined || first === null ? null : { kind, resolution, type: first }
 }
 
-function aliasTarget(
-  name: string,
+function declaredTarget(
+  bindings: readonly TypeBinding[],
   reference: ESTree.TSTypeReference,
   resolution: Resolution
 ): ReferenceTarget | null {
-  const alias = visibleTypeAlias(name, reference, resolution.environment.typeAliases)
-  if (alias === null || resolution.resolving.has(name)) return null
-
-  const substitutions = aliasSubstitution(alias, reference, resolution.substitutions)
-  if (substitutions === null) return null
-
-  return {
-    generic: (alias.typeParameters?.params.length ?? 0) > 0,
-    kind: "alias",
-    type: alias.typeAnnotation,
-    resolution: {
-      ...resolution,
-      resolving: new Set([...resolution.resolving, name]),
-      substitutions,
-    },
+  const declarations = bindings.map((binding) => binding.declaration)
+  const interfaces = declarations.filter(
+    (declaration) => declaration?.type === "TSInterfaceDeclaration"
+  )
+  if (interfaces.length === declarations.length) {
+    return { declarations: interfaces, kind: "interface" }
   }
+
+  const [alias] = declarations
+
+  return declarations.length === 1 && alias?.type === "TSTypeAliasDeclaration"
+    ? aliasTarget(alias, reference, resolution)
+    : null
+}
+
+function aliasTarget(
+  alias: ESTree.TSTypeAliasDeclaration,
+  reference: ESTree.TSTypeReference,
+  resolution: Resolution
+): ReferenceTarget | null {
+  const expanded = expandAlias(alias, reference, resolution)
+  if (expanded === null) return null
+
+  return { ...expanded, generic: (alias.typeParameters?.params.length ?? 0) > 0, kind: "alias" }
 }

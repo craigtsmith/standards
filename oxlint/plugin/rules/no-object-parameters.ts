@@ -7,12 +7,8 @@ import {
 } from "./lib/ast/function-parameters.ts"
 import { signatureVisitor, type SignatureNode } from "./lib/ast/signatures.ts"
 import { ruleDocs } from "./lib/rule-meta.ts"
-import {
-  createTypeAliasEnvironment,
-  resolvedTypeMatches,
-  type ResolvedTypeMatcher,
-  type TypeAliasEnvironment,
-} from "./lib/types/type-alias-resolution.ts"
+import { createTypeEnvironment, type TypeEnvironment } from "./lib/types/type-environment.ts"
+import { resolvedTypeMatches, type ResolvedTypeMatcher } from "./lib/types/type-references.ts"
 
 const isObjectKeyword: ResolvedTypeMatcher = (resolved, matches) => {
   if (resolved.type === "TSObjectKeyword") return true
@@ -23,10 +19,10 @@ const isObjectKeyword: ResolvedTypeMatcher = (resolved, matches) => {
 }
 
 interface FileState {
-  environment: TypeAliasEnvironment | null
+  environment: TypeEnvironment | null
 }
 
-function resolvesToObject(type: ESTree.TSType, environment: TypeAliasEnvironment | null): boolean {
+function resolvesToObject(type: ESTree.TSType, environment: TypeEnvironment | null): boolean {
   return environment !== null && resolvedTypeMatches(type, environment, isObjectKeyword)
 }
 
@@ -62,7 +58,7 @@ export const noObjectParametersRule: Rule = defineRule({
       ...signatureVisitor((node) => reportObjectParameters(context, state, node)),
 
       Program(node) {
-        state.environment = createTypeAliasEnvironment(node, context.sourceCode.visitorKeys)
+        state.environment = createTypeEnvironment(node, context.sourceCode.visitorKeys)
       },
     }
   },

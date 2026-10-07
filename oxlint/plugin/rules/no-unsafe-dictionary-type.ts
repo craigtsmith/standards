@@ -6,8 +6,11 @@ import {
   classifyUnsafeDictionary,
   classifyUnsafeDictionaryValue,
 } from "./lib/types/dictionary-types.ts"
-import { visibleTypeAlias } from "./lib/types/type-alias-resolution.ts"
-import { createTypeEnvironment, type TypeEnvironment } from "./lib/types/type-environment.ts"
+import {
+  createTypeEnvironment,
+  visibleTypeAlias,
+  type TypeEnvironment,
+} from "./lib/types/type-environment.ts"
 import { typeReferenceName } from "./lib/types/type-syntax.ts"
 
 const typeNodeKinds: ReadonlySet<string> = new Set([
@@ -73,7 +76,7 @@ function isPlainAliasConsumerUse(node: ESTree.TSType, environment: TypeEnvironme
 
   return (
     name !== null &&
-    visibleTypeAlias(name, node, environment.typeAliases) !== null &&
+    visibleTypeAlias(name, node, environment) !== null &&
     !isInsideTypeAliasDeclaration(node)
   )
 }

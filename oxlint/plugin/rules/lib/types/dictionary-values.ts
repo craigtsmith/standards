@@ -1,16 +1,12 @@
 import type { ESTree } from "@oxlint/plugins"
 
+import type { Resolution, ResolvedType } from "./resolution.ts"
 import { hasBroadRecordKey, isBroadMappedKey } from "./broad-keys.ts"
-import { resolveReference, type ReferenceTarget, type Resolution } from "./type-references.ts"
+import { resolveReference, type ReferenceTarget } from "./type-references.ts"
 import { unwrapTransparentType } from "./type-syntax.ts"
 
 export interface WideningTarget {
   readonly kind: WideningTargetKind
-}
-
-export interface ResolvedType {
-  readonly resolution: Resolution
-  readonly type: ESTree.TSType
 }
 
 export type WideningTargetKind =
@@ -39,7 +35,7 @@ export function dictionaryValueTypes(
 
   if (unwrapped.type !== "TSTypeReference") return []
 
-  return referenceValueTypes(resolveReference(unwrapped, resolution), resolution)
+  return referenceValueTypes(resolveReference(unwrapped, resolution))
 }
 
 /**
@@ -69,7 +65,7 @@ export function classifyAliasBroadTarget(
 
   if (unwrapped.type !== "TSTypeReference") return null
 
-  return broadReferenceTarget(resolveReference(unwrapped, resolution), resolution)
+  return broadReferenceTarget(resolveReference(unwrapped, resolution))
 }
 
 function indexSignatureValues(
@@ -83,41 +79,28 @@ function indexSignatureValues(
   )
 }
 
-function referenceValueTypes(
-  target: ReferenceTarget | null,
-  resolution: Resolution
-): readonly ResolvedType[] {
-  if (target === null) return []
-
-  switch (target.kind) {
+function referenceValueTypes(target: ReferenceTarget | null): readonly ResolvedType[] {
+  switch (target?.kind) {
     case "alias":
-      return dictionaryValueTypes(target.type, target.resolution)
     case "pick":
-      return dictionaryValueTypes(target.source, resolution)
-    case "record":
-      return target.value === null ? [] : [{ resolution, type: target.value }]
     case "substitution":
     case "wrapped":
-      return dictionaryValueTypes(target.type, resolution)
+      return dictionaryValueTypes(target.type, target.resolution)
+    case "record":
+      return target.value === null ? [] : [{ resolution: target.resolution, type: target.value }]
     default:
       return []
   }
 }
 
-function broadReferenceTarget(
-  target: ReferenceTarget | null,
-  resolution: Resolution
-): WideningTarget | null {
-  if (target === null) return null
-
-  switch (target.kind) {
+function broadReferenceTarget(target: ReferenceTarget | null): WideningTarget | null {
+  switch (target?.kind) {
     case "alias":
-      return classifyAliasBroadTarget(target.type, target.resolution)
-    case "record":
-      return hasBroadRecordKey(target.key, resolution) ? OPEN_DICTIONARY : null
     case "substitution":
     case "wrapped":
-      return classifyAliasBroadTarget(target.type, resolution)
+      return classifyAliasBroadTarget(target.type, target.resolution)
+    case "record":
+      return hasBroadRecordKey(target.key, target.resolution) ? OPEN_DICTIONARY : null
     default:
       return null
   }

@@ -2,16 +2,17 @@ import type { ESTree } from "@oxlint/plugins"
 
 import { forEachChild, type VisitorKeys } from "../ast/walk.ts"
 
+// `declaration` is null for a class, enum or import, which bind a name the
+// resolver does not look inside.
 export interface TypeBinding {
-  readonly alias: ESTree.TSTypeAliasDeclaration | null
+  readonly declaration: TypeDeclaration | null
   readonly name: string
   readonly scope: ESTree.Node
 }
 
-export interface TypeBindings {
-  readonly aliases: readonly ESTree.TSTypeAliasDeclaration[]
-  readonly bindingsByName: ReadonlyMap<string, readonly TypeBinding[]>
-}
+export type TypeDeclaration = ESTree.TSInterfaceDeclaration | ESTree.TSTypeAliasDeclaration
+
+export type BindingsByName = ReadonlyMap<string, readonly TypeBinding[]>
 
 type DeclaredBinding = Omit<TypeBinding, "scope">
 
@@ -30,27 +31,24 @@ const scopeKinds = new Set([
 export function collectTypeBindings(
   program: ESTree.Program,
   visitorKeys: VisitorKeys
-): TypeBindings {
-  const aliases: ESTree.TSTypeAliasDeclaration[] = []
+): BindingsByName {
   const bindingsByName = new Map<string, TypeBinding[]>()
-  const record = (declared: DeclaredBinding, node: ESTree.Node) => {
-    const bindings = bindingsByName.get(declared.name) ?? []
-
-    bindings.push({ ...declared, scope: enclosingTypeScope(node) })
-    bindingsByName.set(declared.name, bindings)
-
-    if (declared.alias !== null) aliases.push(declared.alias)
-  }
   const visit = (node: ESTree.Node): void => {
     const declared = declaredTypeBinding(node)
-    if (declared !== null) record(declared, node)
+
+    if (declared !== null) {
+      const bindings = bindingsByName.get(declared.name) ?? []
+
+      bindings.push({ ...declared, scope: enclosingTypeScope(node) })
+      bindingsByName.set(declared.name, bindings)
+    }
 
     forEachChild(node, visitorKeys, visit)
   }
 
   visit(program)
 
-  return { aliases, bindingsByName }
+  return bindingsByName
 }
 
 /**
@@ -60,7 +58,7 @@ export function collectTypeBindings(
 export function nearestTypeBindings(
   name: string,
   use: ESTree.Node,
-  bindingsByName: TypeBindings["bindingsByName"]
+  bindingsByName: BindingsByName
 ): readonly TypeBinding[] {
   const candidates = bindingsByName.get(name) ?? []
   const measured = candidates.map((candidate) => ({
@@ -87,15 +85,16 @@ function enclosingTypeScope(node: ESTree.Node): ESTree.Node {
 }
 
 function declaredTypeBinding(node: ESTree.Node): DeclaredBinding | null {
-  if (node.type === "TSTypeAliasDeclaration") return { alias: node, name: node.id.name }
+  if (node.type === "TSTypeAliasDeclaration" || node.type === "TSInterfaceDeclaration") {
+    return { declaration: node, name: node.id.name }
+  }
 
   if (
-    node.type === "TSInterfaceDeclaration" ||
     node.type === "TSEnumDeclaration" ||
     node.type === "ClassDeclaration" ||
     node.type === "ClassExpression"
   ) {
-    return node.id === null ? null : { alias: null, name: node.id.name }
+    return node.id === null ? null : { declaration: null, name: node.id.name }
   }
 
   if (
@@ -103,7 +102,7 @@ function declaredTypeBinding(node: ESTree.Node): DeclaredBinding | null {
     node.type === "ImportDefaultSpecifier" ||
     node.type === "ImportNamespaceSpecifier"
   ) {
-    return { alias: null, name: node.local.name }
+    return { declaration: null, name: node.local.name }
   }
 
   return null

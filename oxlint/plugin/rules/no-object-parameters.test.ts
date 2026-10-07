@@ -21,6 +21,11 @@ ruleTester.run("no-object-parameters", noObjectParametersRule, {
     { code: "type Owner = object; function f(value: Owner) {}", errors: [broad("value")] },
     { code: "type Id<T> = T; function f(value: Id<object>) {}", errors: [broad("value")] },
     { code: "function f(a: object, b: object) {}", errors: [broad("a"), broad("b")] },
+    { code: "type Input<T = object> = T; function f(value: Input) {}", errors: [broad("value")] },
+    {
+      code: "type Readonly<T> = T; function f(value: Readonly<object>) {}",
+      errors: [broad("value")],
+    },
   ],
   valid: [
     "function f(value: Box) {}",
@@ -29,5 +34,7 @@ ruleTester.run("no-object-parameters", noObjectParametersRule, {
     "function f(value: object[]) {}",
     "function f(value: Box | null) {}",
     "type Owner = Box; function f(value: Owner) {}",
+    "function f(value: Readonly<object>) {}",
+    "type Pair<A, B> = B; type Flip<A> = Pair<object, A>; function f(value: Flip<string>) {}",
   ],
 })

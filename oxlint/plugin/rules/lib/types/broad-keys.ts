@@ -1,9 +1,9 @@
 import type { ESTree } from "@oxlint/plugins"
 
+import type { Resolution } from "./resolution.ts"
 import { BROAD_KEY_KEYWORDS } from "./broad-types.ts"
-import { visibleTypeAlias } from "./type-alias-resolution.ts"
-import { isBuiltIn, isUnappliedReferenceTo, type Resolution } from "./type-references.ts"
-import { typeReferenceName, unwrapTransparentType } from "./type-syntax.ts"
+import { resolveReference } from "./type-references.ts"
+import { unwrapTransparentType } from "./type-syntax.ts"
 
 /**
  * Whether a mapped-type key admits arbitrary names: `string`, `number` or `symbol`, a union holding
@@ -29,27 +29,15 @@ export function hasBroadRecordKey(key: ESTree.TSType | null, resolution: Resolut
 }
 
 function isBroadKeyReference(reference: ESTree.TSTypeReference, resolution: Resolution): boolean {
-  const name = typeReferenceName(reference)
-  if (name === null) return false
+  const target = resolveReference(reference, resolution)
 
-  const substitution = resolution.substitutions.get(name)
-  if (substitution !== undefined && !isUnappliedReferenceTo(substitution, name)) {
-    return isBroadMappedKey(substitution, resolution)
+  switch (target?.kind) {
+    case "alias":
+    case "substitution":
+      return isBroadMappedKey(target.type, target.resolution)
+    case "propertyKey":
+      return true
+    default:
+      return false
   }
-
-  if (name === "PropertyKey" && isBuiltIn(name, reference, resolution.environment)) return true
-
-  const alias = visibleTypeAlias(name, reference, resolution.environment.typeAliases)
-  if (
-    alias === null ||
-    (alias.typeParameters?.params.length ?? 0) > 0 ||
-    resolution.resolving.has(name)
-  ) {
-    return false
-  }
-
-  return isBroadMappedKey(alias.typeAnnotation, {
-    ...resolution,
-    resolving: new Set([...resolution.resolving, name]),
-  })
 }

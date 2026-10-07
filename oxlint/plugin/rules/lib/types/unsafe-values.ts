@@ -1,6 +1,7 @@
 import type { ESTree } from "@oxlint/plugins"
 
-import { resolveReference, type ReferenceTarget, type Resolution } from "./type-references.ts"
+import type { Resolution } from "./resolution.ts"
+import { resolveReference, type ReferenceTarget } from "./type-references.ts"
 import { unwrapTransparentType } from "./type-syntax.ts"
 
 export type UnsafeValue = "any" | "empty-object" | "object" | "union" | "unknown"
@@ -32,7 +33,7 @@ export function unsafeDirectValue(type: ESTree.TSType, resolution: Resolution): 
 
   if (unwrapped.type !== "TSTypeReference") return null
 
-  return unsafeReference(resolveReference(unwrapped, resolution), resolution)
+  return unsafeReference(resolveReference(unwrapped, resolution))
 }
 
 function isNeverType(type: ESTree.TSType): boolean {
@@ -78,20 +79,14 @@ function unsafeIntersection(
   return members.every((member) => member !== null) ? (members[0] ?? null) : null
 }
 
-function unsafeReference(
-  target: ReferenceTarget | null,
-  resolution: Resolution
-): UnsafeValue | null {
-  if (target === null) return null
-
-  switch (target.kind) {
+function unsafeReference(target: ReferenceTarget | null): UnsafeValue | null {
+  switch (target?.kind) {
     case "alias":
+    case "substitution":
+    case "wrapped":
       return unsafeDirectValue(target.type, target.resolution)
     case "interface":
       return isEffectivelyEmptyInterface(target.declarations) ? "empty-object" : null
-    case "substitution":
-    case "wrapped":
-      return unsafeDirectValue(target.type, resolution)
     default:
       return null
   }

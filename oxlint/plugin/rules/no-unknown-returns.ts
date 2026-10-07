@@ -3,12 +3,8 @@ import { defineRule } from "@oxlint/plugins"
 
 import { signatureVisitor, type SignatureNode } from "./lib/ast/signatures.ts"
 import { ruleDocs } from "./lib/rule-meta.ts"
-import {
-  createTypeAliasEnvironment,
-  resolvedTypeMatches,
-  type ResolvedTypeMatcher,
-  type TypeAliasEnvironment,
-} from "./lib/types/type-alias-resolution.ts"
+import { createTypeEnvironment, type TypeEnvironment } from "./lib/types/type-environment.ts"
+import { resolvedTypeMatches, type ResolvedTypeMatcher } from "./lib/types/type-references.ts"
 
 function isPromiseReference(type: ESTree.TSType): type is ESTree.TSTypeReference {
   return (
@@ -32,7 +28,7 @@ const isUnknownKeyword: ResolvedTypeMatcher = (resolved, matches) => {
   return value !== undefined && matches(value)
 }
 
-function resolvesToUnknown(type: ESTree.TSType, environment: TypeAliasEnvironment | null): boolean {
+function resolvesToUnknown(type: ESTree.TSType, environment: TypeEnvironment | null): boolean {
   return environment !== null && resolvedTypeMatches(type, environment, isUnknownKeyword)
 }
 
@@ -49,7 +45,7 @@ export const noUnknownReturnsRule: Rule = defineRule({
   },
 
   createOnce(context) {
-    let environment: TypeAliasEnvironment | null = null
+    let environment: TypeEnvironment | null = null
 
     const checkReturnType = (node: SignatureNode) => {
       const returnType = node.returnType?.typeAnnotation
@@ -62,7 +58,7 @@ export const noUnknownReturnsRule: Rule = defineRule({
       ...signatureVisitor(checkReturnType),
 
       Program(node) {
-        environment = createTypeAliasEnvironment(node, context.sourceCode.visitorKeys)
+        environment = createTypeEnvironment(node, context.sourceCode.visitorKeys)
       },
     }
   },

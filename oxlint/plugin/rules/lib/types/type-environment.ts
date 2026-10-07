@@ -1,38 +1,62 @@
 import type { ESTree } from "@oxlint/plugins"
 
 import type { VisitorKeys } from "../ast/walk.ts"
-import { createTypeAliasEnvironment, type TypeAliasEnvironment } from "./type-alias-resolution.ts"
+import { lexicalTypeParameterNames } from "./lexical-type-parameters.ts"
+import {
+  collectTypeBindings,
+  nearestTypeBindings,
+  type BindingsByName,
+  type TypeBinding,
+} from "./type-bindings.ts"
 
 export interface TypeEnvironment {
-  readonly interfaces: ReadonlyMap<string, readonly ESTree.TSInterfaceDeclaration[]>
-  readonly typeAliases: TypeAliasEnvironment
+  readonly bindingsByName: BindingsByName
+  readonly visitorKeys: VisitorKeys
 }
 
+const environmentsByProgram = new WeakMap<ESTree.Program, TypeEnvironment>()
+
 /**
- * A file's top-level interfaces by name, and its cached type alias environment.
+ * A file's type bindings, cached per program so every rule in a file shares one walk.
  */
 export function createTypeEnvironment(
   program: ESTree.Program,
   visitorKeys: VisitorKeys
 ): TypeEnvironment {
-  const interfaces = new Map<string, ESTree.TSInterfaceDeclaration[]>()
+  const cached = environmentsByProgram.get(program)
+  if (cached !== undefined) return cached
 
-  for (const statement of program.body) {
-    const declaration = declaredStatement(statement)
-    if (declaration?.type !== "TSInterfaceDeclaration") continue
+  const environment = { bindingsByName: collectTypeBindings(program, visitorKeys), visitorKeys }
 
-    const declarations = interfaces.get(declaration.id.name) ?? []
+  environmentsByProgram.set(program, environment)
 
-    declarations.push(declaration)
-    interfaces.set(declaration.id.name, declarations)
-  }
-
-  return { interfaces, typeAliases: createTypeAliasEnvironment(program, visitorKeys) }
+  return environment
 }
 
-function declaredStatement(statement: ESTree.Statement): ESTree.Node | null {
-  return statement.type === "ExportNamedDeclaration" ||
-    statement.type === "ExportDefaultDeclaration"
-    ? (statement.declaration ?? null)
-    : statement
+/**
+ * The bindings a name refers to at a use site, from the nearest scope that declares it. Null when
+ * a lexical type parameter shadows the name.
+ */
+export function visibleTypeBindings(
+  name: string,
+  use: ESTree.Node,
+  environment: TypeEnvironment
+): readonly TypeBinding[] | null {
+  if (lexicalTypeParameterNames(use, environment.visitorKeys).has(name)) return null
+
+  return nearestTypeBindings(name, use, environment.bindingsByName)
+}
+
+/**
+ * The single type alias a name refers to at a use site, or null when it refers to anything else.
+ */
+export function visibleTypeAlias(
+  name: string,
+  use: ESTree.Node,
+  environment: TypeEnvironment
+): ESTree.TSTypeAliasDeclaration | null {
+  const bindings = visibleTypeBindings(name, use, environment) ?? []
+  const declaration = bindings.length === 1 ? bindings[0]?.declaration : null
+
+  return declaration?.type === "TSTypeAliasDeclaration" ? declaration : null
 }

@@ -2,11 +2,8 @@ import type { ESTree, Rule } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 
 import { ruleDocs } from "./lib/rule-meta.ts"
-import {
-  createTypeAliasEnvironment,
-  resolvedTypeMatches,
-  type TypeAliasEnvironment,
-} from "./lib/types/type-alias-resolution.ts"
+import { createTypeEnvironment, type TypeEnvironment } from "./lib/types/type-environment.ts"
+import { resolvedTypeMatches } from "./lib/types/type-references.ts"
 
 export const noUnknownTypeAliasesRule: Rule = defineRule({
   meta: {
@@ -19,7 +16,7 @@ export const noUnknownTypeAliasesRule: Rule = defineRule({
   },
 
   createOnce(context) {
-    let environment: TypeAliasEnvironment | null = null
+    let environment: TypeEnvironment | null = null
 
     const resolvesToUnknown = (type: ESTree.TSType): boolean =>
       environment !== null &&
@@ -35,7 +32,7 @@ export const noUnknownTypeAliasesRule: Rule = defineRule({
 
     return {
       Program(node) {
-        environment = createTypeAliasEnvironment(node, context.sourceCode.visitorKeys)
+        environment = createTypeEnvironment(node, context.sourceCode.visitorKeys)
       },
       TSTypeAliasDeclaration(node) {
         if (!resolvesToUnknown(node.typeAnnotation)) return

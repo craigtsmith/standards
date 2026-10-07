@@ -7,7 +7,8 @@ import {
   dictionaryValueTypes,
   type WideningTarget,
 } from "./dictionary-values.ts"
-import { resolveReference, topLevelResolution, type ReferenceTarget } from "./type-references.ts"
+import { topLevelResolution } from "./resolution.ts"
+import { resolveReference, type ReferenceTarget } from "./type-references.ts"
 import { unwrapTransparentType } from "./type-syntax.ts"
 import { unsafeDirectValue, type UnsafeValue } from "./unsafe-values.ts"
 
@@ -101,9 +102,7 @@ function referenceWideningTarget(
     case "alias":
       return aliasWideningTarget(target)
     case "record":
-      return hasBroadRecordKey(target.key, topLevelResolution(environment))
-        ? { kind: "open dictionary" }
-        : null
+      return hasBroadRecordKey(target.key, target.resolution) ? { kind: "open dictionary" } : null
     case "wrapped":
       return classifyWideningTarget(target.type, environment)
     default:

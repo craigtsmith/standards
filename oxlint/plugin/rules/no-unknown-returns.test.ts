@@ -24,6 +24,8 @@ ruleTester.run("no-unknown-returns", noUnknownReturnsRule, {
       errors: error,
     },
     { code: "type Loaded<T> = T; function f(): Loaded<unknown> { return value }", errors: error },
+    { code: "type Partial<T> = T; function f(): Partial<unknown> { return value }", errors: error },
+    { code: "type Loaded<T = unknown> = T; function f(): Loaded { return value }", errors: error },
   ],
   valid: [
     "function f(): string { return '' }",
@@ -33,5 +35,7 @@ ruleTester.run("no-unknown-returns", noUnknownReturnsRule, {
     "type Loaded = Box; function f(): Loaded { return box }",
     // A generic parameter is not unknown, whatever it is instantiated with.
     "function f<T>(value: T): T { return value }",
+    "function f(): Partial<unknown> { return value }",
+    "interface Loaded {}; function f(): Loaded { return value }",
   ],
 })

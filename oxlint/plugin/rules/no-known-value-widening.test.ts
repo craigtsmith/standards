@@ -38,6 +38,27 @@ ruleTester.run("no-known-value-widening", noKnownValueWideningRule, {
       code: "const isBox = (value: unknown): value is Box => true; isBox(1)",
       errors: [widening("argument for parameter `value` of `isBox`", "unknown")],
     },
+    {
+      code: "const a: Readonly<Record<string, number>> = { width: 1 }",
+      errors: [widening("binding `a`", "open dictionary")],
+    },
+    {
+      code: "const a: Record<PropertyKey, number> = { width: 1 }",
+      errors: [widening("binding `a`", "open dictionary")],
+    },
+    {
+      code: "type Key = string; const a: Record<Key, number> = { width: 1 }",
+      errors: [widening("binding `a`", "open dictionary")],
+    },
+    {
+      code: "type Bag<T> = Record<string, T>; const a: Bag<number> = { width: 1 }",
+      errors: [widening("binding `a`", "generic container")],
+    },
+    // A generic alias in key position is followed with its arguments bound.
+    {
+      code: "type Key<T> = T; const a: Record<Key<string>, number> = { width: 1 }",
+      errors: [widening("binding `a`", "open dictionary")],
+    },
   ],
   valid: [
     "const a = 1",
@@ -54,5 +75,8 @@ ruleTester.run("no-known-value-widening", noKnownValueWideningRule, {
     "function isBox(value: unknown): value is Box { return true }; isBox(load())",
     // Unknown as a boundary contract, not a widening of a known value.
     "function f(value: unknown): value is Box { return true }",
+    'type Record<K, V> = { key: K; value: V }; const a: Record<string, number> = { key: "a", value: 1 }',
+    'type PropertyKey = "width"; const a: Record<PropertyKey, number> = { width: 1 }',
+    "interface Box { width: number }; const a: Box = { width: 1 }",
   ],
 })
