@@ -56,7 +56,3 @@ The project's config merges over the preset. Objects merge key by key, so one th
 ```
 
 Arrays replace the preset's value. The preset sets no arrays.
-
-## This repo
-
-`.fallowrc.jsonc` at the repo root extends `./fallow/preset.jsonc`, so the preset is checked here with the same thresholds. It adds this repo's entry points, zones, `ignoreDependencies` for the eslint plugins the oxlint preset loads through `import.meta.resolve`, and `audit.healthBaseline`, which points at `fallow-health-baseline.json`. The baseline is empty: the repo passes its own thresholds.

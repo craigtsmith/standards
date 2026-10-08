@@ -1,6 +1,8 @@
 # oxlint preset
 
-`@craigts.dev/standards/oxlint` exports `defineConfig`. A consumer's `oxlint.config.ts` calls it with its own additions, or with nothing.
+`@craigts.dev/standards/oxlint` is an oxlint preset for TypeScript projects. It exports `defineConfig`, which adds the configuration of your project to the preset. The preset also loads `standards`, a JS plugin with custom rules.
+
+Install the package and its peer dependencies as the [root README](../README.md) shows. Then create `oxlint.config.ts` in the project root:
 
 ```ts
 import { defineConfig } from "@craigts.dev/standards/oxlint"
@@ -8,45 +10,11 @@ import { defineConfig } from "@craigts.dev/standards/oxlint"
 export default defineConfig()
 ```
 
-## Layout
+## Change the preset in your project
 
-- `config/index.ts` — the base: categories, env, plugins, JS plugins, ignore patterns, and the env-only overrides for config, script and test files. Exports `defineConfig`.
-- `config/rules/<plugin>.ts` — one file per plugin, named after the rule prefix. Inside, one `const` per theme (`typeSystem`, `failurePaths`, `cognitiveLoad`, `moduleSurface`, `houseStyle`, `security`, `testing`) spread into the exported fragment. A rule relaxation for test or declaration files lives in the file of the plugin it relaxes.
-- `config/rules/shared.ts` — the `Rule` and `Rules` types and the `testFiles` globs the base and the plugin files share.
-- `config/rules/jsdoc-js.ts` — the doc rules oxlint's native `jsdoc` port does not carry, from `eslint-plugin-jsdoc` under the alias `jsdoc-js`; oxlint reserves the `jsdoc` prefix. The port runs in Rust and is an order faster, so everything it carries stays in `jsdoc.ts` and nothing appears in both files.
-- `config/rules/perfectionist/<rule>.ts` — the four option objects too long to read inline. `sort-classes.ts` and `sort-modules.ts` each sit beside a `.probe.ts` file that exercises them.
-- `plugin/` — the `standards` JS plugin: one `plugin/rules/<rule>.ts` per rule, with its test beside it.
-- `plugin/rules/lib/` — helpers the rules share. `ast/` reads syntax, `types/` resolves type annotations and aliases, `widening/` follows known values through declarations, assignments, calls and returns for `no-known-value-widening` and `no-widen-then-assert`. `rule-meta.ts` builds each rule's `meta.docs` and reads its options. `.fallowrc.jsonc` declares these folders as boundary zones: `ast/` imports from no other zone, `types/` from `ast/`, `widening/` from both.
+Give your changes to `defineConfig`. A rule in your `rules` replaces the setting of the preset for that rule. If you give options, they replace all the options of the preset for that rule.
 
-Each `standards` rule is documented in [`docs/rules/`](../docs/rules/README.md).
-
-## Reading a rule
-
-The prefix in a diagnostic is the file: `sonarjs(no-nested-conditional)` is in `config/rules/sonarjs.ts`. eslint core rules print without a prefix.
-
-A rule absent from every file can still be on. `categories` in `config/index.ts` enables every built-in rule tagged correctness, perf or suspicious. `oxlint --print-config` prints the resolved set. JS plugin rules (`jsdoc-js`, `perfectionist`, `sonarjs`, `standards`) are on only when a file lists them.
-
-An `"off"` entry is load-bearing only when a category would otherwise enable the rule. Each such entry says so. Check a new one with `--print-config` before and after.
-
-## Comments and doc blocks
-
-Two rules decide what a comment may be, and neither one asks for a tag.
-
-`standards/max-comment-lines` carries three limits. `max`, three lines, is for an ordinary comment: a run of adjacent `//` lines counts as one, and a single blank line does not break the run; two do. A `/* */` block counts its own lines. Three lines is room for a real explanation, so prose has no reason to become a doc block.
-
-`maxDoc`, fifteen lines, is for documentation: a well-formed `/** */` block sitting on a declaration the rule knows, that declaration exported or ambient. On an unexported declaration a tagless block is an ordinary comment and takes the three-line limit; a tag makes it documentation, and `@internal` is enough.
-
-`maxHeader`, twenty lines, is for the file header: a well-formed block on line 1 before any token. A header sums up a module rather than one declaration, so it gets the longer count. A block on line 1 is always judged as the header, never as documentation for whatever follows it.
-
-`jsdoc/*` and `jsdoc-js/*` govern what goes inside a block. No rule requires a tag. `/** Why this exists. */` on a function is complete: there is no `require-param`, `require-returns`, `require-property` or `require-yields`, and no `require-jsdoc`, so a function may carry no block at all. `require-property`, `require-property-type` and `require-yields` are `"off"` in `jsdoc.ts` rather than absent, because the correctness category would otherwise enable them.
-
-What the block does carry has to hold up. `require-description` rejects a block of nothing but tags. `check-param-names` rejects a `@param` naming a parameter that does not exist, and duplicates, with `disableMissingParamChecks` so documenting one parameter does not oblige documenting the rest. `require-param-description` and `require-returns-description` reject a bare tag. `check-tag-names` rejects a tag that is not a tag, `empty-tags` a tag carrying content it should not, `no-types` a type in a `@param` that TypeScript already states. `check-tag-names` comes from the alias and the port's copy is `"off"`: the port's tag list predates TSDoc and rejects `@remarks`. `sort-tags` is off for the same reason.
-
-`informative-docs` reports a description that only restates the name above it. It is a warning, because it compares a description's words with the name and can flag a short accurate description.
-
-## Overriding
-
-A consumer's `rules` take precedence over the preset's. A rule set with options replaces the preset's options for that rule in full. The preset sets no React version, so a project that needs one sets it in `settings`.
+The preset sets no React version. If your project uses React, set the version in `settings`.
 
 ```ts
 import { defineConfig } from "@craigts.dev/standards/oxlint"
@@ -57,14 +25,188 @@ export default defineConfig({
 })
 ```
 
-## Merging
+To disable a rule, set it to `"off"`.
 
-oxlint's `extends` merges `rules`, `overrides` and `plugins`, and replaces `env` and `ignorePatterns` with the consumer's. `defineConfig` merges those two with the base; anything else the consumer passes goes through as given.
+Five `typescript` rules share their name with an eslint core rule: `class-methods-use-this`, `no-array-constructor`, `no-unused-expressions`, `no-unused-vars` and `no-useless-constructor`. oxlint keeps one setting for each pair. A setting under the `eslint/` name or the `typescript/` name replaces the setting of the preset.
 
-## Tests
+### How your configuration merges with the preset
 
-`pnpm test` runs vitest over the `*.test.ts` files under `oxlint/`. Each rule has one test file beside it, driven by `RuleTester` from `oxlint/plugins-dev`, which lints in-process through oxlint's own bindings. `plugin/rules/rule-tester.ts` binds the tester to vitest and exports `ruleTester`, which parses as `ts`. Columns in an expected error are zero-based. An `errors` entry with `data` must name every placeholder the message uses.
+oxlint's `extends` replaces `env` and `ignorePatterns` with the values of your project. For this reason, `defineConfig` merges these two keys itself.
 
-## Probes
+| Key              | Result                                                                              |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| `env`            | `defineConfig` merges your keys over the keys of the preset.                        |
+| `ignorePatterns` | `defineConfig` adds your patterns to the list of the preset.                        |
+| `extends`        | `defineConfig` puts the preset first, then your entries.                            |
+| `rules`          | oxlint's `extends` merges them. Your entry replaces the preset entry for that rule. |
+| `overrides`      | oxlint's `extends` merges them with the overrides of the preset.                    |
+| `plugins`        | oxlint's `extends` merges them with the plugins of the preset.                      |
+| Other keys       | `defineConfig` passes them to oxlint unchanged.                                     |
 
-`config/rules/perfectionist/*.probe.ts` are linted like any other file. Reorder members in one and `pnpm lint` should report it. They import nothing and nothing imports them, so `.fallowrc.jsonc` lists them as entry points to keep fallow from reporting them as unused files.
+## What the preset enables
+
+### Categories
+
+| Category      | Severity |
+| ------------- | -------- |
+| `correctness` | error    |
+| `perf`        | warn     |
+| `suspicious`  | warn     |
+
+A category enables every built-in rule in that category for the enabled plugins. The rule files of the preset do not list these rules. Thus a rule can be enabled although no rule file names it.
+
+### Built-in plugins
+
+The preset enables these oxlint plugins: `import`, `jsdoc`, `jsx-a11y`, `node`, `oxc`, `promise`, `react`, `typescript`, `unicorn` and `vitest`. The eslint core rules are always available.
+
+### JS plugins
+
+| Prefix          | Package                                | Contents                                                       |
+| --------------- | -------------------------------------- | -------------------------------------------------------------- |
+| `standards`     | `@craigts.dev/standards/oxlint/plugin` | The custom rules of this package.                              |
+| `jsdoc-js`      | `eslint-plugin-jsdoc`                  | Only the doc block rules that the native `jsdoc` port lacks.   |
+| `perfectionist` | `eslint-plugin-perfectionist`          | Sort order of imports, class members, modules, props and keys. |
+| `sonarjs`       | `eslint-plugin-sonarjs`                | Control flow, hardcoded credentials, OS commands, test checks. |
+
+oxlint reserves the `jsdoc` prefix for its native port in Rust. For this reason, the preset loads `eslint-plugin-jsdoc` under the alias `jsdoc-js`. No rule appears under both prefixes.
+
+The three eslint plugins are dependencies of this package. The preset resolves them from its own location, so your project does not install them.
+
+A category does not enable JS plugin rules. A JS plugin rule is enabled only when a rule file of the preset names it.
+
+### Type-aware linting
+
+The preset sets `options.typeAware` to `true`. oxlint runs the rules that need type information through `oxlint-tsgolint`, for example `typescript/no-unsafe-assignment`. Your project must install `oxlint-tsgolint`.
+
+### Environment
+
+All files get the `browser` and `es2025` globals. These files also get the `node` globals:
+
+- config files: `**/*.config.{ts,mts,js,mjs}`
+- scripts: `**/scripts/**`
+- test files
+
+### Ignored paths
+
+The preset ignores `**/dist`, `**/out`, `**/.astro`, `**/node_modules` and `**/.claude`.
+
+### Test files and declaration files
+
+Test files are the files that match `**/*.test.{ts,tsx}`, `**/*.spec.{ts,tsx}` or `**/e2e/**`. In test files, the preset disables these rules:
+
+- the size limits: `eslint/max-depth`, `eslint/max-lines`, `eslint/max-lines-per-function`, `eslint/max-nested-callbacks`, `eslint/max-params`, `eslint/max-statements`
+- these `typescript` rules: `class-methods-use-this`, `no-explicit-any`, `no-extraneous-class`, `no-non-null-assertion`, `no-unsafe-assignment`, `no-unsafe-return`, `no-unsafe-type-assertion`
+
+In `**/*.d.ts` files, the preset disables `sonarjs/no-redundant-assignments`.
+
+### Size limits
+
+| Rule                            | Limit | Blank and comment lines |
+| ------------------------------- | ----- | ----------------------- |
+| `eslint/max-depth`              | 2     |                         |
+| `eslint/max-lines`              | 150   | not counted             |
+| `eslint/max-lines-per-function` | 40    | not counted             |
+| `eslint/max-nested-callbacks`   | 3     |                         |
+| `eslint/max-params`             | 3     |                         |
+| `eslint/max-statements`         | 10    |                         |
+
+### Rule options
+
+| Rule                                     | Option                                                                        | Effect                                                                                               |
+| ---------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `typescript/no-unused-vars`              | `argsIgnorePattern` and `varsIgnorePattern` are `^_`                          | A name that starts with `_` can stay unused.                                                         |
+| `eslint/prefer-const`                    | `destructuring: "all"`, `ignoreReadBeforeAssign: true`                        | If code reassigns one binding of a destructuring, all bindings of that destructuring can stay `let`. |
+| `eslint/no-warning-comments`             | `terms: ["jscpd:ignore-start", "jscpd:ignore-end"]`                           | The rule reports jscpd ignore markers anywhere in a comment.                                         |
+| `typescript/consistent-type-definitions` | `"interface"`                                                                 | The rule reports an object type that is written as a type alias.                                     |
+| `typescript/no-empty-object-type`        | `allowInterfaces: "with-single-extends"`                                      | An empty interface that extends one type is allowed.                                                 |
+| `typescript/class-methods-use-this`      | `ignoreClassesWithImplements: "public-fields"`, `ignoreOverrideMethods: true` | The rule ignores override methods and the public members of a class that implements an interface.    |
+| `standards/no-runtime-typeof`            | `allowInTypeGuards: true`                                                     | A `typeof` check inside a type predicate is allowed.                                                 |
+| `unicorn/catch-error-name`               | `name: "error"`                                                               | The catch parameter is `error`.                                                                      |
+| `unicorn/filename-case`                  | `case: "kebabCase"`, severity warn                                            | File names are kebab-case.                                                                           |
+| `promise/always-return`                  | `ignoreLastCallback: true`, severity warn                                     | The last `then` callback in a chain can return nothing.                                              |
+
+### Sort order
+
+Inside each group, the `perfectionist` rules use natural sort order. `sort-modules` is the exception.
+
+| Rule                           | Order                                                                                                                                                                                                                                                                                   |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `perfectionist/sort-imports`   | React, then type imports, then built-in and external modules. After a blank line: internal, parent, sibling and index imports. After a blank line: side-effect imports.                                                                                                                 |
+| `perfectionist/sort-classes`   | Index signatures and abstract members. Then fields: private, protected, public. Static before instance, readonly first. Then static blocks and the constructor. Then accessors, each getter beside its setter. Then static methods, private first. Then instance methods, public first. |
+| `perfectionist/sort-modules`   | Exported types, then local types. Then exported classes and functions, then local classes and functions. Inside a group, the rule keeps your order.                                                                                                                                     |
+| `perfectionist/sort-jsx-props` | `key`, `ref`, `id`, `className` and `style`, `aria-` and `data-` props, shorthand props, string values, other expressions, objects, JSX, callbacks. Multiline props come last.                                                                                                          |
+| `perfectionist/sort-objects`   | Properties first, then methods after a blank line.                                                                                                                                                                                                                                      |
+
+`sort-enums`, `sort-exports`, `sort-interfaces`, `sort-maps`, `sort-object-types` and `sort-sets` sort by name only.
+
+## Find where a rule is set
+
+The prefix in a diagnostic names the rule file. `sonarjs(no-nested-conditional)` is in `config/rules/sonarjs.ts`. In your project, the same file is `node_modules/@craigts.dev/standards/dist/oxlint/config/rules/sonarjs.js`.
+
+The five shared `typescript` rules in [Change the preset in your project](#change-the-preset-in-your-project) are an exception. Their diagnostics show the `eslint` prefix, but the preset sets them in `typescript.ts`.
+
+If no rule file names a rule, a category enables it. To see the resolved set of built-in rules, run this command:
+
+```sh
+npx oxlint --print-config
+```
+
+The output shows eslint core rules without a prefix and `jsx-a11y` rules as `jsx_a11y`. It does not show JS plugin rules. For those rules, read `jsdoc-js.ts`, `perfectionist.ts`, `sonarjs.ts` and `standards.ts`.
+
+## Rules the preset disables
+
+- `eslint/no-await-in-loop`
+- `eslint/no-underscore-dangle`
+- `import/no-unassigned-import`
+- `jsdoc/check-tag-names`
+- `jsdoc/require-property`
+- `jsdoc/require-property-type`
+- `jsdoc/require-yields`
+- `oxc/missing-throw`
+- `react/react-in-jsx-scope`
+- `typescript/consistent-return`
+- `typescript/unbound-method`
+- `unicorn/no-unnecessary-await`
+- `vitest/require-mock-type-parameters`
+- `jsdoc-js/check-indentation`
+- `jsdoc-js/sort-tags`
+
+## Comments and doc blocks
+
+### `standards/max-comment-lines`
+
+This rule sets a line limit for each kind of comment. [`docs/rules/max-comment-lines.md`](../docs/rules/max-comment-lines.md) gives the full definition.
+
+| Option      | Limit | Applies to                                                                                          |
+| ----------- | ----- | --------------------------------------------------------------------------------------------------- |
+| `max`       | 3     | An ordinary comment.                                                                                |
+| `maxDoc`    | 15    | A documentation block: a well-formed `/** */` block on an exported or ambient declaration.          |
+| `maxHeader` | 20    | A file header: a well-formed `/** */` block on line 1, or line 2 after a shebang, before any token. |
+
+- Adjacent `//` lines count as one comment. A single blank line, or a line with only `//`, continues the comment. Two blank lines end it.
+- A `/* */` block counts its own lines.
+- On an unexported declaration, a `/** */` block is documentation only if it has a block tag. `@internal` is sufficient. Without a tag, the block is an ordinary comment.
+- The rule always treats a block on line 1 as the file header.
+
+### Doc block rules
+
+No rule requires a tag or a doc block. The preset enables no `require-jsdoc`, `require-param` or `require-returns` rule. `/** Why this exists. */` is a complete doc block on a function.
+
+The enabled rules check what a block contains:
+
+| Rule                                                                   | Reports                                                                                  |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `jsdoc-js/require-description`                                         | A block that has only tags.                                                              |
+| `jsdoc-js/check-param-names`                                           | A `@param` for a parameter that does not exist, and a duplicate `@param`.                |
+| `jsdoc/require-param-description`, `jsdoc/require-returns-description` | A `@param` or `@returns` tag without a description.                                      |
+| `jsdoc-js/check-tag-names`                                             | An unknown tag. TSDoc tags such as `@remarks` are accepted.                              |
+| `jsdoc/empty-tags`                                                     | Content on a tag that takes no content.                                                  |
+| `jsdoc-js/no-types`                                                    | A type in a tag.                                                                         |
+| `jsdoc-js/informative-docs` (warn)                                     | A description that only repeats the name.                                                |
+| `jsdoc-js/tag-lines`                                                   | A missing blank line between the description and the tags, or a blank line between tags. |
+
+`jsdoc-js/check-param-names` sets `disableMissingParamChecks` and `checkDestructured: false`. Thus a `@param` for one parameter does not require a `@param` for the other parameters or for destructured properties.
+
+## Custom rules
+
+[`docs/rules/README.md`](../docs/rules/README.md) lists the rules of the `standards` plugin. The preset enables all of them.

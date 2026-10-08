@@ -1,34 +1,51 @@
 # oxfmt preset
 
-`@craigts.dev/standards/oxfmt` exports `defineConfig`. A consumer's `oxfmt.config.ts` calls it with its own options, or with nothing.
+`@craigts.dev/standards/oxfmt` exports `defineConfig`. Call it from `oxfmt.config.ts` in your project. You can give it your own options, or no options.
 
 ```ts
-// oxfmt.config.ts
 import { defineConfig } from "@craigts.dev/standards/oxfmt"
 
 export default defineConfig()
 ```
 
-## Base options
+## Options in the preset
 
-- `printWidth: 100`, `tabWidth: 2`, `endOfLine: "lf"`, `objectWrap: "preserve"`, `sortPackageJson: true`, `singleQuote: false`. These match oxfmt's defaults. They are set so a project's `.editorconfig` cannot change them, and so a change in oxfmt's defaults does not reformat every consumer.
-- `semi: false`. No semicolons.
-- `trailingComma: "es5"`. Trailing commas in multi-line arrays, objects and type parameter lists. None after function parameters or call arguments. oxfmt's default is `"all"`.
-- `overrides`: `trailingComma: "none"` for `**/*.jsonc`. Many JSONC parsers reject a trailing comma.
-- `ignorePatterns`: `**/dist`, `**/out`, `**/.astro`, `**/node_modules`, `**/.claude`, `**/pnpm-lock.yaml`. Build output, generated files and files other tools own.
+| Option            | Value        | Reason                                              |
+| ----------------- | ------------ | --------------------------------------------------- |
+| `printWidth`      | `100`        | Same as the oxfmt default.                          |
+| `tabWidth`        | `2`          | Same as the oxfmt default.                          |
+| `endOfLine`       | `"lf"`       | Same as the oxfmt default.                          |
+| `objectWrap`      | `"preserve"` | Same as the oxfmt default.                          |
+| `singleQuote`     | `false`      | Same as the oxfmt default.                          |
+| `sortPackageJson` | `true`       | Same as the oxfmt default.                          |
+| `semi`            | `false`      | No semicolons.                                      |
+| `trailingComma`   | `"es5"`      | The oxfmt default is `"all"`. See the next section. |
 
-## Merging
+The preset sets the options that match the oxfmt defaults for two reasons. The `.editorconfig` file of a project cannot change them. A change to the oxfmt defaults does not reformat all projects.
 
-`ignorePatterns` and `overrides` are appended to the base lists. Every other option replaces the base value.
+### Trailing commas
+
+With `"es5"`, oxfmt adds a trailing comma to multi-line arrays, objects and type parameter lists. It does not add one after function parameters or call arguments.
+
+The preset has one override. It sets `trailingComma: "none"` for `**/*.jsonc` files, because many JSONC parsers do not accept a trailing comma.
+
+### Ignored files
+
+The preset ignores `**/dist`, `**/out`, `**/.astro`, `**/node_modules`, `**/.claude` and `**/pnpm-lock.yaml`. These are build output, generated files and files that other tools own.
+
+## Merge rules
+
+`defineConfig` adds your `ignorePatterns` and `overrides` to the lists of the preset. Each other option that you give replaces the value of the preset.
 
 ## Tailwind
 
-`defineConfig` also accepts `sortTailwindcss`, which turns on oxfmt's Tailwind class sorting. The preset defaults its `functions` to `["cn", "cva"]`, so class strings passed to those helpers are sorted as well as `class` and `className` attributes. Passing `functions` replaces that list. Without `sortTailwindcss` the sort stays off.
+`defineConfig` also accepts `sortTailwindcss`. This option enables the Tailwind class sort of oxfmt. If you do not give `sortTailwindcss`, oxfmt does not sort classes.
+
+The preset sets `functions` to `["cn", "cva"]`. oxfmt then sorts the class strings in calls to those functions, and in `class` and `className` attributes. If you give `functions`, your list replaces the list of the preset.
 
 ## Example
 
 ```ts
-// oxfmt.config.ts
 import { defineConfig } from "@craigts.dev/standards/oxfmt"
 
 export default defineConfig({
@@ -39,4 +56,9 @@ export default defineConfig({
 })
 ```
 
-`printWidth` replaces the base value. `src/generated` joins the base ignore list. The Markdown override joins the `.jsonc` override.
+This config has these results:
+
+- `printWidth` is 120.
+- oxfmt ignores `src/generated` and all the files that the preset ignores.
+- The Markdown override applies, and the `.jsonc` override of the preset also applies.
+- oxfmt sorts classes in calls to `cn`, `cva` and `clsx`.

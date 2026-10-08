@@ -1,27 +1,65 @@
 # tsconfig presets
 
-Small files combined through an `extends` array. Later entries win, so list them in the order below. The files carry no comments; this page is the explanation.
+This directory holds the tsconfig presets of `@craigts.dev/standards`. Each preset is a small JSON file that sets a few options. A project combines presets in the `extends` array of its `tsconfig.json`.
 
-1. `base.json` — always first. Strictness, `.ts` import specifiers, and a bundler/`noEmit` default.
-2. One runtime: `dom.json`, `node.json` or `bun.json`. Sets `lib` and `types`.
-3. Optional framework: `react.json` (includes `dom.json`).
-4. Optional output: `tsc.json` when tsc emits; `library.json` for a published package; `references.json` for `tsc --build` graphs; `strip-types.json` when Node runs `.ts` directly.
+## Requirements
 
-```jsonc
-// Vite + React app
+- TypeScript 6.0 or later.
+- `@types/node` for `node.json`.
+- `@types/bun` for `bun.json`.
+
+TypeScript 6.0 added `es2025` as a value for `target` and `lib`. Earlier versions reject the presets because of this value.
+
+## Pick your presets
+
+The order in `extends` is important. If two presets set the same option, the preset later in the array wins.
+
+1. Put `base.json` first. Every project uses it.
+2. Add one runtime preset: `dom.json`, `node.json` or `bun.json`.
+3. If the project uses React, use `react.json` in place of `dom.json`.
+4. If the project needs an output preset from the table, add it last.
+
+| If the project                                                         | Add                |
+| ---------------------------------------------------------------------- | ------------------ |
+| uses tsc to emit the JavaScript                                        | `tsc.json`         |
+| is a package that other people install from npm                        | `library.json`     |
+| is a monorepo package that other packages use through its built output | `references.json`  |
+| is a script that Node runs without a build                             | `strip-types.json` |
+
+Without an output preset, `base.json` sets `noEmit`, and a bundler emits the JavaScript. A monorepo package that exports its `.ts` source does not need `references.json`.
+
+## Examples
+
+Each example is the full `tsconfig.json` of a project.
+
+### Vite + React app
+
+```json
 {
-  "extends": ["@craigts.dev/standards/tsconfig/base.json", "@craigts.dev/standards/tsconfig/react.json"],
+  "extends": [
+    "@craigts.dev/standards/tsconfig/base.json",
+    "@craigts.dev/standards/tsconfig/react.json"
+  ],
   "compilerOptions": { "types": ["vite/client"] },
   "include": ["src"]
 }
+```
 
-// Node service bundled by tsdown or esbuild
+### Node service built by a bundler such as tsdown or esbuild
+
+```json
 {
-  "extends": ["@craigts.dev/standards/tsconfig/base.json", "@craigts.dev/standards/tsconfig/node.json"],
+  "extends": [
+    "@craigts.dev/standards/tsconfig/base.json",
+    "@craigts.dev/standards/tsconfig/node.json"
+  ],
   "include": ["src"]
 }
+```
 
-// Published package, built by tsdown
+### Published package built by tsdown
+
+```json
 {
   "extends": [
     "@craigts.dev/standards/tsconfig/base.json",
@@ -30,8 +68,11 @@ Small files combined through an `extends` array. Later entries win, so list them
   ],
   "include": ["src"]
 }
+```
 
-// Published package, emitted by tsc, inside a tsc --build monorepo
+### Published package emitted by tsc in a `tsc --build` monorepo
+
+```json
 {
   "extends": [
     "@craigts.dev/standards/tsconfig/base.json",
@@ -42,8 +83,11 @@ Small files combined through an `extends` array. Later entries win, so list them
   ],
   "include": ["src"]
 }
+```
 
-// Script Node runs without a build step
+### Script that Node runs without a build
+
+```json
 {
   "extends": [
     "@craigts.dev/standards/tsconfig/base.json",
@@ -52,81 +96,129 @@ Small files combined through an `extends` array. Later entries win, so list them
   ],
   "include": ["src"]
 }
+```
 
-// Electron: main, preload and renderer in one project. react.json plus Node
-// globals, not node.json, whose lib would drop DOM.
+### Electron app with main, preload and renderer code in one project
+
+`react.json` gives the DOM types, and `"types": ["node"]` adds the Node globals. The example does not use `node.json`, because the `lib` value of `node.json` removes the DOM types.
+
+```json
 {
-  "extends": ["@craigts.dev/standards/tsconfig/base.json", "@craigts.dev/standards/tsconfig/react.json"],
+  "extends": [
+    "@craigts.dev/standards/tsconfig/base.json",
+    "@craigts.dev/standards/tsconfig/react.json"
+  ],
   "compilerOptions": { "types": ["node"] },
   "include": ["src"]
 }
 ```
 
-## The axes
-
-| Question                     | Preset                                                                                  |
-| ---------------------------- | --------------------------------------------------------------------------------------- |
-| Browser or Node or Bun?      | `dom.json`, `node.json`, `bun.json`                                                     |
-| React?                       | `react.json` in place of `dom.json`                                                     |
-| Does tsc emit, or a bundler? | bundler is the default; add `tsc.json` for tsc                                          |
-| Published to npm?            | `library.json`                                                                          |
-| Monorepo?                    | nothing, if packages export `.ts` source; `references.json` if they export built output |
-| Node runs `.ts` directly?    | `strip-types.json`                                                                      |
-
-## What each file sets, and why
+## What each preset sets
 
 ### base.json
 
-The base assumes code that a bundler (Vite, tsdown, esbuild, Bun) turns into JavaScript, so tsc only checks. `tsc.json` flips that.
+`base.json` assumes that a bundler (Vite, tsdown, esbuild or Bun) emits the JavaScript. tsc only checks the types. `tsc.json` changes this.
 
-- `target: es2025`. What Node 24, Bun and evergreen browsers run. Bundlers downlevel from here; tsc's own output stays as written.
-- `moduleDetection: force`. Every file is a module, so two script files never share a global scope.
-- `module: preserve`. Keeps import/require as written and implies bundler resolution, which reads package.json `exports` and `imports`.
-- `noEmit: true`. The bundler writes the JavaScript.
-- `rewriteRelativeImportExtensions: true`. Write `./thing.ts` in relative imports. Node, Bun and every bundler accept it, and when tsc emits it rewrites to `.js`. This also switches on `allowImportingTsExtensions`.
-- `resolveJsonModule: true`. Implied by `preserve`, kept explicit because `tsc.json` switches to `nodenext`.
-- `verbatimModuleSyntax` and `isolatedModules`. Type imports must say `import type`, so each file can be transpiled on its own without the checker.
-- `types: []`. Nothing is global until a runtime file says so.
-- `strict`, plus the checks it leaves out: `exactOptionalPropertyTypes` (`{ a?: string }` no longer accepts `{ a: undefined }`), `noUncheckedIndexedAccess` (`arr[i]` is `T | undefined`), `noPropertyAccessFromIndexSignature` (values behind an index signature are read with brackets, so dynamic lookups look different from declared properties), `noImplicitOverride`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noUncheckedSideEffectImports`, `allowUnreachableCode: false`, `allowUnusedLabels: false`.
-- Unused locals and parameters are left to the linter. The oxlint preset's `typescript/no-unused-vars` honours the `_` prefix and can be fixed.
-- `skipLibCheck: true`. Declaration files in node_modules are not re-checked.
+| Option                               | Value      |
+| ------------------------------------ | ---------- |
+| `target`                             | `es2025`   |
+| `moduleDetection`                    | `force`    |
+| `module`                             | `preserve` |
+| `noEmit`                             | `true`     |
+| `rewriteRelativeImportExtensions`    | `true`     |
+| `resolveJsonModule`                  | `true`     |
+| `verbatimModuleSyntax`               | `true`     |
+| `isolatedModules`                    | `true`     |
+| `types`                              | `[]`       |
+| `strict`                             | `true`     |
+| `exactOptionalPropertyTypes`         | `true`     |
+| `noUncheckedIndexedAccess`           | `true`     |
+| `noPropertyAccessFromIndexSignature` | `true`     |
+| `noImplicitOverride`                 | `true`     |
+| `noImplicitReturns`                  | `true`     |
+| `noFallthroughCasesInSwitch`         | `true`     |
+| `noUncheckedSideEffectImports`       | `true`     |
+| `allowUnreachableCode`               | `false`    |
+| `allowUnusedLabels`                  | `false`    |
+| `skipLibCheck`                       | `true`     |
+
+`base.json` does not report unused variables or parameters. The oxlint preset reports them with `typescript/no-unused-vars`. This rule ignores names that start with `_`.
 
 ### dom.json
 
-`lib: ["es2025", "dom"]`. Since TypeScript 6 the `dom` lib contains `dom.iterable` and `dom.asynciterable`.
+`dom.json` sets `lib` to `["es2025", "dom"]`.
 
 ### node.json
 
-`lib: ["es2025"]` and `types: ["node"]`. Needs `@types/node`. Add `tsc.json` when tsc emits, or `strip-types.json` when Node runs the `.ts` files directly.
+`node.json` sets `lib` to `["es2025"]` and `types` to `["node"]`. The project needs `@types/node`.
 
 ### bun.json
 
-`lib: ["esnext"]` and `types: ["bun"]`. Needs `@types/bun`. Bun runs `.ts` directly and understands every TypeScript construct, so nothing about emit or erasable syntax applies.
+`bun.json` sets `lib` to `["esnext"]` and `types` to `["bun"]`. The project needs `@types/bun`. Do not combine it with `tsc.json` or `strip-types.json`.
 
 ### react.json
 
-`dom.json` plus `jsx: react-jsx`. The automatic runtime imports `react/jsx-runtime` itself, so `@types/react` needs no `types` entry.
+`react.json` extends `dom.json` and sets `jsx` to `react-jsx`.
 
 ### tsc.json
 
-tsc emits the JavaScript. `module: nodenext` for Node's ESM/CJS rules, `noEmit: false`, `rootDir` and `outDir` set to `src` and `dist` beside the extending tsconfig through `${configDir}`, and `sourceMap`. Override `rootDir`/`outDir` if the layout differs.
+`tsc.json` makes tsc emit the JavaScript.
+
+| Option      | Value               |
+| ----------- | ------------------- |
+| `module`    | `nodenext`          |
+| `noEmit`    | `false`             |
+| `rootDir`   | `${configDir}/src`  |
+| `outDir`    | `${configDir}/dist` |
+| `sourceMap` | `true`              |
+
+If the source of the project is not in `src`, set `rootDir` and `outDir` in the project `tsconfig.json`.
 
 ### library.json
 
-A package other people import. `declaration` and `declarationMap` emit `.d.ts` with maps back to source. `isolatedDeclarations` makes every export carry an explicit type, so tsdown, oxc or Bun can produce the `.d.ts` without the TypeScript compiler API, which tsc 7 no longer ships. Under `base.json`'s `noEmit` this still checks; combine with `tsc.json` to have tsc write the files.
+`library.json` is for a package that other people install.
+
+| Option                 | Value  |
+| ---------------------- | ------ |
+| `declaration`          | `true` |
+| `declarationMap`       | `true` |
+| `isolatedDeclarations` | `true` |
+
+With `base.json`, `noEmit` is `true`, and these options only check the code. If you add `tsc.json`, tsc emits the `.d.ts` files.
 
 ### references.json
 
-A package in a monorepo that others consume through its built output, so `tsc --build` must know the graph: `composite`, `incremental`, `declarationMap`, and a `tsBuildInfoFile` under `node_modules/.tmp`. Not needed when packages export `.ts` source through package.json `exports`.
+`references.json` is for a monorepo package that other packages use through its built output. `tsc --build` needs to know the project graph.
+
+| Option            | Value                                                 |
+| ----------------- | ----------------------------------------------------- |
+| `composite`       | `true`                                                |
+| `incremental`     | `true`                                                |
+| `declarationMap`  | `true`                                                |
+| `tsBuildInfoFile` | `${configDir}/node_modules/.tmp/tsconfig.tsbuildinfo` |
+
+If the monorepo packages export their `.ts` source through `exports` in `package.json`, the project does not need this preset.
 
 ### strip-types.json
 
-Node runs the `.ts` files itself (type stripping is on by default since Node 23.6). `erasableSyntaxOnly` allows only syntax Node can erase: no enums, namespaces, parameter properties or decorators.
+`strip-types.json` is for `.ts` files that Node runs directly. Type stripping is on by default since Node 23.6.0 and 22.18.0.
 
-## Requirements
+`erasableSyntaxOnly` makes TypeScript report syntax that Node cannot remove. This syntax includes enums, namespaces with runtime code, parameter properties, `import =`, `export =` and `<T>` type assertions.
 
-TypeScript 6.0 or later. The presets lean on 6.0 defaults (`strict`, `types: []`, `noUncheckedSideEffectImports`, interop always on) and use nothing 7.0 removed (`baseUrl`, `downlevelIteration`, `moduleResolution: node10`). `es2025` as a `target` and `lib` value arrived in 6.0. An editor language server that still runs a bundled TypeScript 5.9 (vtsls does, because TypeScript 7 ships no `tsserver.js` for it to load) rejects these files; use a server that runs TypeScript 7 itself, such as Zed's tsgo extension.
+Node also rejects decorators and `.tsx` files. `erasableSyntaxOnly` does not report decorators.
 
-## What stays with the consumer
+Node needs the file extension in each relative import. The `bundler` resolution from `base.json` does not report a missing extension. Write the `.ts` extension in each relative import.
 
-`paths`, `include`, `exclude`, extra `types` such as `vite/client`, `jsxImportSource` for a non-React runtime, and `experimentalDecorators`/`emitDecoratorMetadata` where a DI container reads constructor metadata.
+## What stays with your project
+
+The presets do not set these options. Set them in the project `tsconfig.json`:
+
+- `include` and `exclude`.
+- `paths`.
+- More `types`, for example `vite/client`. A `types` value in the project replaces the preset value. For a Node project, write `["node", "vite/client"]`.
+- `jsxImportSource`, for a JSX runtime other than React.
+- `experimentalDecorators` and `emitDecoratorMetadata`, for a dependency injection container that reads constructor metadata.
+
+## Editor support
+
+TypeScript 7.0 ships no `tsserver.js`. When the project has no `tsserver.js`, vtsls uses its bundled TypeScript 5.9. TypeScript 5.9 rejects `es2025`, so the editor shows errors in these presets. Use a language server that runs TypeScript 7, for example `tsc --lsp` or the tsgo extension for Zed.
